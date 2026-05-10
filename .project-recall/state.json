@@ -12,26 +12,8 @@
     "project-recall-0.1.3.vsix"
   ],
   "gitModified": [
-    ".gitignore",
-    ".project-recall/state.json",
-    ".vscode/launch.json",
-    ".vscode/tasks.json",
-    ".vscodeignore",
-    "LICENSE",
-    "README.md",
-    "icon.png",
-    "media/recall.svg",
-    "package-lock.json",
-    "package.json",
-    "src/extension.ts",
-    "src/scanner/gitScanner.ts",
-    "src/scanner/workspaceScanner.ts",
-    "src/state/recovery.ts",
-    "src/state/stateManager.ts",
-    "src/types/state.ts",
-    "src/ui/sidebarProvider.ts",
-    "tsconfig.json"
+    ".project-recall/state.json"
   ],
   "notes": "",
-  "lastUpdated": 1778380839636
+  "lastUpdated": 1778380958158
 }
