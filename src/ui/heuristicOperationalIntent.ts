@@ -3,7 +3,7 @@ import { sliceEventsForIntentSession } from '../core/events/sessionEventWindow';
 import type { ProjectState } from '../types/state';
 import { filterEngineeringPaths } from './sidebarPathFilter';
 
-/** Doc §九: intent contribution decays ~×0.92 per 5 minutes of age. */
+/** Doc §9: intent contribution decays ~×0.92 per 5 minutes of age. */
 const DECAY_PER_5_MIN = 0.92;
 
 /** Minimum pool score to appear as a bullet (avoid noise). */
@@ -49,7 +49,7 @@ function add(pool: Map<string, number>, key: string, delta: number): void {
 }
 
 /**
- * Score pool from path + doc §六 / §七 + doc §十七 directory hints (`/docs/`, `/pages/`, …).
+ * Score pool from path + doc §6 / §7 + §17 directory hints (`/docs/`, `/pages/`, …).
  */
 function accumulatePathIntents(rel: string, pool: Map<string, number>, weight: number): void {
   const p = rel.replace(/\\/g, '/');
@@ -127,7 +127,7 @@ function applyGitRules(
 }
 
 /**
- * Heuristic operational intent bullets (doc: score pool, §九 decay, §十七 edit/save weights).
+ * Heuristic operational intent bullets (doc: score pool, §9 decay, §17 edit/save weights).
  * Shown when persisted LLM intent (`aiIntent.goals`) is empty.
  */
 export function buildHeuristicOperationalIntentLines(
@@ -215,7 +215,7 @@ export function buildHeuristicOperationalIntentLines(
         continue;
       }
       const dec = decayFactor(ev.timestamp, now);
-      /** Doc §十七: edit +3, save +1; `file_focus` ≈ edit signal. */
+      /** Doc §17: edit +3, save +1; `file_focus` ≈ edit signal. */
       const eventMult = ev.type === 'file_save' ? 1 : 3;
       const streakMult = prevPath === rel ? 0.5 : 1;
       const w = dec * eventMult * streakMult;

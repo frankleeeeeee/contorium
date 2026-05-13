@@ -21,7 +21,7 @@ function basenameOf(rel: string): string {
   return parts.length ? parts[parts.length - 1]! : rel;
 }
 
-/** Doc §七: drop junk / low-signal scratch files from AI-facing file list. */
+/** Doc §7: drop junk / low-signal scratch files from AI-facing file list. */
 function isLowValueBasename(rel: string): boolean {
   const base = basenameOf(rel);
   const nameNoExt = base.includes('.') ? base.slice(0, base.lastIndexOf('.')) : base;
@@ -50,7 +50,7 @@ function computePathScore(
   return f * 0.5 + s * 3 + open * 2 + git * 4;
 }
 
-/** Doc §八: top 3–5 meaningful paths; display basename only. */
+/** Doc §8: top 3–5 meaningful paths; display basename only. */
 function pickActiveFileBasenames(
   state: ProjectState,
   analysis: ActivityAnalysis,
@@ -103,7 +103,7 @@ function pickActiveFileBasenames(
   return out;
 }
 
-/** Doc §十一: short human lines (aggregated stream), not raw JSON events. */
+/** Doc §11: short human lines (aggregated stream), not raw JSON events. */
 function pickRecentWorkLines(eventStore: EventStore | undefined, max: number): string[] {
   if (!eventStore) {
     return [];
@@ -154,7 +154,7 @@ function workspaceFocusBullets(state: ProjectState, eventStore: EventStore | und
   const lines = buildHeuristicOperationalIntentLines(state, eventStore, 8);
   const task = (state.currentTask ?? '').trim();
   const withoutStated = task ? lines.filter((l) => !l.startsWith('Stated focus:')) : lines;
-  /** Doc §十: top 3 intents for “Workspace focus” in export. */
+  /** Doc §10: top 3 intents for “Workspace focus” in export. */
   return withoutStated.slice(0, 3);
 }
 
