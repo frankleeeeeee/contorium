@@ -12,6 +12,15 @@ function recentActivityLines(events: WorkspaceEvent[]): string[] {
     if (e.type === 'file_save') {
       return `save ${e.file}`;
     }
+    if (e.type === 'file_create') {
+      return `create ${e.file}`;
+    }
+    if (e.type === 'file_delete') {
+      return `delete ${e.file}`;
+    }
+    if (e.type === 'file_rename') {
+      return `rename ${e.oldFile} -> ${e.newFile}`;
+    }
     if (e.type === 'git_change') {
       return `git staged:${e.staged.length} modified:${e.modified.length}`;
     }

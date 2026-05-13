@@ -45,6 +45,27 @@ export function analyzeActivity(
       }
       saveByFile[ev.file] = (saveByFile[ev.file] ?? 0) + 1;
       bumpFolder(ev.file);
+    } else if (ev.type === 'file_create') {
+      if (shouldIgnore?.(ev.file)) {
+        continue;
+      }
+      focusByFile[ev.file] = (focusByFile[ev.file] ?? 0) + 1;
+      bumpFolder(ev.file);
+    } else if (ev.type === 'file_delete') {
+      if (shouldIgnore?.(ev.file)) {
+        continue;
+      }
+      saveByFile[ev.file] = (saveByFile[ev.file] ?? 0) + 1;
+      bumpFolder(ev.file);
+    } else if (ev.type === 'file_rename') {
+      if (!shouldIgnore?.(ev.oldFile)) {
+        saveByFile[ev.oldFile] = (saveByFile[ev.oldFile] ?? 0) + 1;
+        bumpFolder(ev.oldFile);
+      }
+      if (!shouldIgnore?.(ev.newFile)) {
+        focusByFile[ev.newFile] = (focusByFile[ev.newFile] ?? 0) + 1;
+        bumpFolder(ev.newFile);
+      }
     }
   }
 

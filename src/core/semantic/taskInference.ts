@@ -18,10 +18,14 @@ export function inferDevelopmentPattern(
   let saves = 0;
   let focuses = 0;
   for (const e of events) {
-    if (e.type === 'file_save') {
+    if (e.type === 'file_save' || e.type === 'file_delete') {
       saves++;
     }
-    if (e.type === 'file_focus') {
+    if (e.type === 'file_focus' || e.type === 'file_create') {
+      focuses++;
+    }
+    if (e.type === 'file_rename') {
+      saves++;
       focuses++;
     }
   }

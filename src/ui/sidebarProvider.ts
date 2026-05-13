@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ContoraKeyManager } from '../ai/auth/keyManager';
 import { readAiRuntimeSettings } from '../ai/auth/providerConfig';
 import { CONTORA_CONFIG_SECTION } from '../constants';
+import { readResolvedExportTokenBudget } from '../ai/exportBudget';
 import type { EventStore } from '../core/engine/eventStore';
 import { getLastIntentJson } from '../ai/runtime/intent/lastIntentStore';
 import { StateManager } from '../state/stateManager';
@@ -187,7 +188,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       keyDeepseek,
       activeModelId,
       exportFormat: cfg.get<string>('exportFormat') ?? 'markdown',
-      exportTokenBudget: Math.max(0, cfg.get<number>('exportTokenBudget') ?? 0),
+      exportTokenBudget: readResolvedExportTokenBudget(cfg),
       appendAiOnExport: cfg.get<boolean>('appendAiSummaryOnExport') === true,
       defaultAIMode: cfg.get<string>('defaultAIMode') ?? 'feature',
       needsActiveProviderKey,
@@ -425,6 +426,25 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       flex-shrink: 0;
     }
     .cr-ai-card-status .cr-dot { background: var(--vscode-testing-iconPassed, #3fb950); }
+    .cr-ai-card-status.cr-ai-card-status--busy .cr-dot--pulse {
+      animation: none;
+      opacity: 1;
+    }
+    .cr-dot--pulse {
+      animation: cr-dot-pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes cr-dot-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.55; transform: scale(0.88); }
+    }
+    /* Recent activity row: gentle clock pulse while the live feed has items */
+    .cr-sum-ico--clock.cr-sum-ico--pulse-soft {
+      animation: cr-clock-soft 2.6s ease-in-out infinite;
+    }
+    @keyframes cr-clock-soft {
+      0%, 100% { opacity: 0.75; }
+      50% { opacity: 1; filter: brightness(1.2); }
+    }
     .cr-ai-focus-row {
       display: flex;
       align-items: baseline;
@@ -455,11 +475,94 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       color: var(--vscode-foreground);
     }
     ul.cr-ai-goals-list li { margin: 2px 0; }
+    ul.cr-ai-goals-list li.cr-goal-enter {
+      animation: cr-goal-in 0.42s ease-out both;
+    }
+    @keyframes cr-goal-in {
+      from { opacity: 0; transform: translateX(-6px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    ul.cr-activity-feed {
+      list-style: none;
+      margin: 4px 0 0;
+      padding: 0;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--vscode-descriptionForeground);
+    }
+    ul.cr-activity-feed li.cr-activity-feed-row {
+      margin: 0;
+      padding: 3px 0 3px 2px;
+      border-radius: 3px;
+    }
+    ul.cr-activity-feed li.cr-activity-feed-enter {
+      animation: cr-activity-feed-in 0.42s ease-out both;
+    }
+    @keyframes cr-activity-feed-in {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    ul.cr-activity-feed li.cr-activity-feed-row--flash {
+      animation: cr-activity-feed-flash 1s ease-out;
+    }
+    @keyframes cr-activity-feed-flash {
+      0% {
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-editor-inactiveSelectionBackground, rgba(127, 127, 127, 0.22));
+      }
+      100% {
+        color: var(--vscode-descriptionForeground);
+        background-color: transparent;
+      }
+    }
     .cr-ai-goals-empty {
       margin: 4px 0 0;
       font-size: 11px;
       line-height: 1.4;
       color: var(--vscode-descriptionForeground);
+    }
+    .cr-ai-goals-empty.cr-text-shimmer {
+      position: relative;
+      overflow: hidden;
+    }
+    button.cr-ai-goals-toggle {
+      display: block;
+      margin: 6px 0 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--vscode-textLink-foreground);
+      cursor: pointer;
+      text-align: left;
+    }
+    button.cr-ai-goals-toggle:hover {
+      text-decoration: underline;
+    }
+    button.cr-ai-goals-toggle:focus-visible {
+      outline: 1px solid var(--vscode-focusBorder);
+      outline-offset: 2px;
+    }
+    .cr-ai-goals-empty.cr-text-shimmer::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      width: 55%;
+      background: linear-gradient(
+        105deg,
+        transparent 0%,
+        var(--vscode-scrollbarSlider-hoverBackground, rgba(127, 127, 127, 0.35)) 50%,
+        transparent 100%
+      );
+      opacity: 0.55;
+      animation: cr-shimmer-sweep 2.1s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes cr-shimmer-sweep {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(220%); }
     }
     .cr-ai-card-grid {
       display: flex;
@@ -678,20 +781,6 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       border-style: solid;
     }
     textarea#notes { min-height: 68px; resize: vertical; margin-top: 2px; }
-    .cr-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-top: 8px;
-    }
-    .cr-tag {
-      font-size: 11px;
-      padding: 3px 9px;
-      border-radius: 999px;
-      background: var(--vscode-badge-background);
-      color: var(--vscode-badge-foreground);
-      opacity: 0.95;
-    }
     .cr-summary {
       background: var(--vscode-editor-inactiveSelectionBackground, rgba(127,127,127,.08));
       border: 1px solid var(--vscode-widget-border, rgba(127,127,127,.18));
@@ -724,6 +813,31 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
     .cr-sum-main { min-width: 0; flex: 1; }
     .cr-sum-muted { color: var(--vscode-descriptionForeground); font-size: 11px; display: block; margin-bottom: 2px; }
     .cr-sum-body { color: var(--vscode-foreground); font-size: 12px; line-height: 1.35; }
+    #sumGitBody.cr-sum-body--anim {
+      display: inline-block;
+      transform-origin: left center;
+      animation: cr-num-pop 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes cr-num-pop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.045); }
+      100% { transform: scale(1); }
+    }
+    #sumActivity.cr-sum-line--flash .cr-sum-body {
+      animation: cr-activity-flash 1s ease-out;
+    }
+    @keyframes cr-activity-flash {
+      0% {
+        background-color: var(--vscode-editor-inactiveSelectionBackground, rgba(127, 127, 127, 0.22));
+        border-radius: 4px;
+      }
+      100% { background-color: transparent; }
+    }
+    #sumActiveBody.cr-sum-body--anim {
+      display: inline-block;
+      transform-origin: left center;
+      animation: cr-num-pop 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+    }
     ul.cr-file-list { padding: 4px 0 0; margin: 0; list-style: none; }
     li.file-row {
       cursor: pointer;
@@ -738,6 +852,20 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       border-radius: 4px;
     }
     li.file-row:hover { background: var(--vscode-list-hoverBackground); text-decoration: none; }
+    li.file-row.cr-row-enter {
+      animation: cr-row-in 0.38s ease-out both;
+    }
+    @keyframes cr-row-in {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    li.file-row.cr-file-row--flash {
+      animation: cr-file-row-flash 1s ease-out;
+    }
+    @keyframes cr-file-row-flash {
+      0% { background-color: var(--vscode-editor-inactiveSelectionBackground, rgba(127, 127, 127, 0.28)); }
+      100% { background-color: transparent; }
+    }
     li.file-row .cr-file-text { text-decoration: none; }
     li.file-row:hover .cr-file-text { text-decoration: underline; }
     li.file-row .cr-file-ico { flex-shrink: 0; margin-top: 1px; color: var(--vscode-symbolIcon-fileForeground, var(--vscode-descriptionForeground)); opacity: 0.9; }
@@ -860,6 +988,27 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       border: 1px solid var(--vscode-inputValidation-warningBorder, transparent);
     }
     #crByokSection { scroll-margin-top: 10px; }
+
+    /* Phased restore (§7): hide sections without layout change; reveal uses opacity only. */
+    html.cr-restore-hydrating .cr-sum-line.cr-restore-hidden,
+    html.cr-restore-hydrating #crSecRecent.cr-restore-hidden,
+    html.cr-restore-hydrating #crGitDetails.cr-restore-hidden,
+    html.cr-restore-hydrating #crSecAiGoals.cr-restore-hidden {
+      transition: none !important;
+    }
+    .cr-sum-line,
+    #crSecRecent,
+    #crGitDetails,
+    #crSecAiGoals {
+      transition: opacity 0.42s ease-out;
+    }
+    .cr-sum-line.cr-restore-hidden,
+    #crSecRecent.cr-restore-hidden,
+    #crGitDetails.cr-restore-hidden,
+    #crSecAiGoals.cr-restore-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -872,10 +1021,10 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
     </div>
   </header>
 
-  <section class="cr-ai-card" aria-label="AI status">
+  <section class="cr-ai-card" aria-label="Workspace status">
     <div class="cr-ai-card-head">
-      <span class="cr-ai-card-title">${ico.code} AI status</span>
-      <span class="cr-ai-card-status"><span class="cr-dot"></span>Running</span>
+      <span class="cr-ai-card-title">${ico.code} Workspace status</span>
+      <span class="cr-ai-card-status" id="aiCardStatusRow"><span class="cr-dot cr-dot--pulse"></span><span id="aiTrackStatus">Workspace tracking active</span></span>
     </div>
     <div class="cr-ai-card-grid">
       <div>
@@ -886,11 +1035,14 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
             <span id="taskCount">0 / ${TASK_MAX}</span>
           </span>
         </div>
-        <textarea id="task" class="cr-task-input" rows="2" maxlength="${TASK_MAX}" placeholder="Enter what you're working on right now."></textarea>
-        <div id="taskTags" class="cr-tags" aria-hidden="true"></div>
-        <p class="cr-ai-goals-label">AI inferred goals</p>
+        <textarea id="task" class="cr-task-input" rows="2" maxlength="${TASK_MAX}" placeholder="What you are focused on right now (optional; also informed by workspace activity)."></textarea>
+        <p id="taskActivityHint" class="cr-byok-muted">Updated automatically from recent work</p>
+        <div id="crSecAiGoals">
+        <p class="cr-ai-goals-label">Operational intent</p>
         <ul id="aiIntentGoals" class="cr-ai-goals-list" hidden></ul>
-        <p id="aiIntentEmpty" class="cr-ai-goals-empty">None yet. Run &quot;Analyze workspace intent (AI)&quot; to show inferred modules and focus here.</p>
+        <button type="button" id="aiIntentGoalsToggle" class="cr-ai-goals-toggle" hidden aria-expanded="false"></button>
+        <p id="aiIntentEmpty" class="cr-ai-goals-empty cr-text-shimmer">Inferring what you are working on from edits, saves, and Git signals — or run &quot;Learn workspace intent&quot; for a structured AI snapshot.</p>
+        </div>
       </div>
       <div class="cr-ai-side-strip" aria-label="Model and runtime summary">
         <div class="cr-ai-side-cell">
@@ -915,19 +1067,18 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
   </section>
 
   <div class="cr-actions">
-    <button type="button" class="cr-primary" id="btnExport" title="Copy structured context to the clipboard">
-      ${ico.copy}<span>Copy AI context</span>${ico.spark}
+    <button type="button" class="cr-primary" id="btnExport" title="Copy a compact, AI-ready snapshot (no raw telemetry) to the clipboard">
+      ${ico.copy}<span>Copy AI-ready context</span>${ico.spark}
     </button>
     <div class="cr-grid2">
-      <button type="button" class="cr-secondary" id="btnSave" title="Write state to disk">${ico.save}<span>Save now</span></button>
+      <button type="button" class="cr-secondary" id="btnSave" title="Write state to disk">${ico.save}<span>Sync state to disk</span></button>
       <button type="button" class="cr-secondary" id="btnRestore" title="Reopen editors from last saved state">${ico.history}<span>Restore editors</span></button>
     </div>
   </div>
 
-  <section class="cr-section">
+  <section class="cr-section" id="crSecSnapshot">
     <div class="cr-section-head">
-      <span class="cr-sec-left"><span class="cr-sec-ico">${ico.spark}</span><span>Context summary</span></span>
-      <span class="cr-link-quiet">More</span>
+      <span class="cr-sec-left"><span class="cr-sec-ico">${ico.spark}</span><span>Workspace snapshot</span></span>
     </div>
     <div class="cr-summary">
       <div class="cr-sum-line" id="sumActive">
@@ -940,7 +1091,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       <div class="cr-sum-line" id="sumGit">
         <span class="cr-sum-ico cr-sum-ico--git">${ico.branch}</span>
         <div class="cr-sum-main">
-          <span class="cr-sum-muted">Git</span>
+          <span class="cr-sum-muted">Git sync</span>
           <div class="cr-sum-body" id="sumGitBody">—</div>
         </div>
       </div>
@@ -949,21 +1100,21 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
         <div class="cr-sum-main">
           <span class="cr-sum-muted">Recent activity</span>
           <div class="cr-sum-body" id="sumActivityBody">—</div>
+          <ul id="activityStreamList" class="cr-activity-feed" hidden aria-label="Recent workspace activity"></ul>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="cr-section">
+  <section class="cr-section" id="crSecRecent">
     <div class="cr-section-head">
-      <span class="cr-sec-left"><span class="cr-sec-ico">${ico.file}</span><span>Active files (recent)</span></span>
-      <span class="cr-link-quiet">More</span>
+      <span class="cr-sec-left"><span class="cr-sec-ico">${ico.file}</span><span>Active files</span></span>
     </div>
     <ul id="recent" class="cr-file-list"></ul>
   </section>
 
-  <details class="cr-git" open>
-    <summary><span class="cr-sec-ico" style="margin-right:2px">${ico.branch}</span> Git changes</summary>
+  <details class="cr-git" open id="crGitDetails">
+    <summary><span class="cr-sec-ico" style="margin-right:2px">${ico.branch}</span> Git changes (synced)</summary>
     <div class="cr-git-sub">
       <div class="cr-git-label"><span class="cr-git-ico">${ico.check}</span> Staged</div>
       <ul id="gitStaged" class="cr-file-list"></ul>
@@ -975,7 +1126,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
   </details>
 
   <label class="cr-notes-label" for="notes"><span class="cr-sec-ico">${ico.note}</span> Context notes</label>
-  <textarea id="notes" rows="4" placeholder="Scratch notes included in export…"></textarea>
+  <textarea id="notes" rows="4" placeholder="Notes for export — kept locally in workspace state."></textarea>
 
   <section class="cr-section" id="crByokSection" style="margin-top:16px">
     <div class="cr-section-head">
@@ -993,9 +1144,9 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
         <button type="button" class="cr-secondary" id="btnByokSettings" title="Models, export format, token budget…">${ico.spark}<span>Contora settings</span></button>
       </div>
       <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
-        <button type="button" class="cr-tertiary" id="btnAiSemantic">AI semantic summary</button>
-        <button type="button" class="cr-tertiary" id="btnAiIntent">Analyze workspace intent (AI)</button>
-        <button type="button" class="cr-tertiary" id="btnAiCompress">Compress context preview (AI)</button>
+        <button type="button" class="cr-tertiary" id="btnAiSemantic">Observe workspace (AI summary)</button>
+        <button type="button" class="cr-tertiary" id="btnAiIntent">Learn workspace intent (AI)</button>
+        <button type="button" class="cr-tertiary" id="btnAiCompress">Tighten context preview (AI)</button>
       </div>
     </div>
   </section>
@@ -1003,7 +1154,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
   <footer class="cr-footer">
     <span id="crVersion">Contora</span>
     <span class="cr-local">
-      <span class="cr-dot" title="No cloud sync"></span> Local only
+      <span class="cr-dot" title="Session data stays on this machine"></span> Local data only
       <span class="cr-footer-gear" id="btnFooterSettings" role="button" tabindex="0" title="Open Contora settings">${ico.gear}</span>
     </span>
   </footer>
@@ -1016,13 +1167,14 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
     const taskEl = document.getElementById('task');
     const notesEl = document.getElementById('notes');
     const taskCountEl = document.getElementById('taskCount');
-    const taskTagsEl = document.getElementById('taskTags');
     const recentEl = document.getElementById('recent');
     const gitStagedEl = document.getElementById('gitStaged');
     const gitWorkingEl = document.getElementById('gitWorking');
     const sumActiveBody = document.getElementById('sumActiveBody');
     const sumGitBody = document.getElementById('sumGitBody');
     const sumActivityBody = document.getElementById('sumActivityBody');
+    const sumActivityLine = document.getElementById('sumActivity');
+    const activityStreamListEl = document.getElementById('activityStreamList');
     const crVersion = document.getElementById('crVersion');
     const byokRuntime = document.getElementById('byokRuntime');
     const byokProvider = document.getElementById('byokProvider');
@@ -1032,12 +1184,19 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
     const byokWarn = document.getElementById('byokWarn');
     const aiIntentGoalsEl = document.getElementById('aiIntentGoals');
     const aiIntentEmptyEl = document.getElementById('aiIntentEmpty');
+    const aiIntentGoalsToggle = document.getElementById('aiIntentGoalsToggle');
+    const LIST_PREVIEW = 5;
+    let aiGoalsExpanded = false;
     const aiStatModel = document.getElementById('aiStatModel');
     const aiStatRuntime = document.getElementById('aiStatRuntime');
     const aiStatMode = document.getElementById('aiStatMode');
     const aiStatUpdated = document.getElementById('aiStatUpdated');
     const aiStatCtx = document.getElementById('aiStatCtx');
     const aiStatTierBadge = document.getElementById('aiStatTierBadge');
+    const aiTrackStatus = document.getElementById('aiTrackStatus');
+    let lastTrackFingerprint = '';
+    let lastActivityStreamHead = '';
+    let trackStatusTimer = null;
     const _tplIco = document.getElementById('tpl-file-ico');
     const fileIcoHtml = _tplIco ? _tplIco.innerHTML : '';
 
@@ -1055,31 +1214,9 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       debounce = setTimeout(() => vscode.postMessage({ type, value }), 400);
     }
 
-    function extractTags(text) {
-      const m = text.match(/[a-zA-Z][a-zA-Z0-9_-]{2,}/g) || [];
-      const stop = new Set(['the','and','for','are','but','not','you','all','can','had','her','was','one','our','out','how','any','has','have','from','with','this','that','into','improve','your','will','just','only','also','than','then','when','what','work']);
-      const seen = new Set();
-      const out = [];
-      for (const w of m) {
-        const lw = w.toLowerCase();
-        if (stop.has(lw) || seen.has(lw)) continue;
-        seen.add(lw);
-        out.push(lw);
-        if (out.length >= 8) break;
-      }
-      return out;
-    }
-
     function paintTaskMeta() {
       const n = taskEl.value.length;
       taskCountEl.textContent = n + ' / ' + TASK_MAX;
-      taskTagsEl.innerHTML = '';
-      for (const t of extractTags(taskEl.value)) {
-        const span = document.createElement('span');
-        span.className = 'cr-tag';
-        span.textContent = t;
-        taskTagsEl.appendChild(span);
-      }
     }
 
     taskEl.addEventListener('input', () => {
@@ -1101,38 +1238,108 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       });
     }
 
-    const LIST_CAP = 5;
-    const expandState = { recent: false, staged: false, working: false };
-    let lastState = null;
+    if (aiIntentGoalsToggle) {
+      aiIntentGoalsToggle.addEventListener('click', function () {
+        aiGoalsExpanded = !aiGoalsExpanded;
+        if (lastState) {
+          paintAiIntentPanel(lastState.aiIntent || null, lastState.activityObservedGoals || []);
+        } else {
+          paintAiIntentPanel(null, []);
+        }
+      });
+    }
 
-    function renderCollapsibleList(ul, items, sectionKey) {
+    const expandState = { recent: false, staged: false, working: false, activityStream: false };
+    let lastState = null;
+    let lastRecentTop = '';
+    let lastSumGit = '';
+    let lastSumActive = '';
+    let lastSumActivity = '';
+
+    function fingerprintSidebar(s) {
+      if (!s) return '';
+      return JSON.stringify({
+        summary: s.summary,
+        recentFiles: s.recentFiles,
+        recentSuffix: s.recentFileActivitySuffixes,
+        gitStaged: s.gitStaged,
+        gitWorking: s.gitWorking,
+        goals: (s.aiIntent && s.aiIntent.goals) || [],
+        activityGoals: s.activityObservedGoals || [],
+        activityStream: s.activityStreamItems || [],
+      });
+    }
+
+    function bumpTrackStatus(s) {
+      if (!aiTrackStatus) return;
+      const statusRow = document.getElementById('aiCardStatusRow');
+      if (!s) {
+        if (trackStatusTimer) {
+          clearTimeout(trackStatusTimer);
+          trackStatusTimer = null;
+        }
+        if (statusRow) statusRow.classList.remove('cr-ai-card-status--busy');
+        aiTrackStatus.textContent = 'Workspace tracking active';
+        lastTrackFingerprint = '';
+        return;
+      }
+      const fp = fingerprintSidebar(s);
+      if (lastTrackFingerprint && fp !== lastTrackFingerprint) {
+        aiTrackStatus.textContent = 'Syncing workspace…';
+        if (statusRow) statusRow.classList.add('cr-ai-card-status--busy');
+        if (trackStatusTimer) clearTimeout(trackStatusTimer);
+        trackStatusTimer = setTimeout(function () {
+          aiTrackStatus.textContent = 'Workspace tracking active';
+          if (statusRow) statusRow.classList.remove('cr-ai-card-status--busy');
+          trackStatusTimer = null;
+        }, 1000);
+      }
+      lastTrackFingerprint = fp;
+    }
+
+    function renderCollapsibleList(ul, items, sectionKey, itemSuffixes) {
       ul.innerHTML = '';
       if (!items || items.length === 0) {
         const li = document.createElement('li');
         li.className = 'muted-row';
-        li.textContent = '(none)';
+        li.textContent = sectionKey === 'recent' ? 'No paths tracked yet' : '(nothing listed yet)';
         ul.appendChild(li);
+        if (sectionKey === 'recent') {
+          lastRecentTop = '';
+        }
         return;
       }
       const expanded = expandState[sectionKey];
-      const visible = expanded ? items : items.slice(0, LIST_CAP);
-      for (const p of visible) {
+      const lim = expanded ? items.length : Math.min(items.length, LIST_PREVIEW);
+      for (let i = 0; i < lim; i++) {
+        const p = items[i];
+        let textHtml = escapeHtml(p);
+        if (sectionKey === 'recent' && itemSuffixes && itemSuffixes[i]) {
+          textHtml += ' · ' + escapeHtml(itemSuffixes[i]);
+        }
         const li = document.createElement('li');
-        li.className = 'file-row';
-        li.innerHTML = '<span class="cr-file-ico">' + fileIcoHtml + '</span><span class="cr-file-text">' + escapeHtml(p) + '</span>';
+        li.className = 'file-row cr-row-enter';
+        li.style.animationDelay = Math.min(i, 10) * 55 + 'ms';
+        if (sectionKey === 'recent' && i === 0 && lastRecentTop && lastRecentTop !== p) {
+          li.classList.add('cr-file-row--flash');
+        }
+        li.innerHTML = '<span class="cr-file-ico">' + fileIcoHtml + '</span><span class="cr-file-text">' + textHtml + '</span>';
         li.addEventListener('click', () => vscode.postMessage({ type: 'openFile', relativePath: p }));
         ul.appendChild(li);
       }
-      if (items.length > LIST_CAP) {
+      if (items.length > LIST_PREVIEW) {
         const toggle = document.createElement('li');
         toggle.className = 'toggle-more';
-        toggle.textContent = expanded ? 'Less' : 'More';
+        toggle.textContent = expanded ? 'Show less' : 'More (+' + (items.length - LIST_PREVIEW) + ')';
         toggle.addEventListener('click', (e) => {
           e.preventDefault();
           expandState[sectionKey] = !expandState[sectionKey];
           if (lastState) paintLists(lastState);
         });
         ul.appendChild(toggle);
+      }
+      if (sectionKey === 'recent' && items.length) {
+        lastRecentTop = items[0];
       }
     }
 
@@ -1150,7 +1357,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       }
       byokRuntime.textContent = 'Runtime: Contora (@contora/runtime)';
       const labels = {
-        off: 'Off (local heuristics only)',
+        off: 'Off (observing locally only)',
         openai: 'OpenAI',
         anthropic: 'Anthropic (Claude)',
         google: 'Google Gemini',
@@ -1172,7 +1379,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       byokModel.textContent =
         b.aiProvider === 'off' ? 'Model: (BYOK off)' : 'Model: ' + (b.activeModelId || '—');
       const budgetTxt =
-        !b.exportTokenBudget || b.exportTokenBudget <= 0 ? 'Unlimited' : String(b.exportTokenBudget) + ' tokens';
+        !b.exportTokenBudget ? 'Unlimited' : String(b.exportTokenBudget) + ' tokens';
       byokExport.textContent =
         'Export: ' +
         (b.exportFormat || 'markdown') +
@@ -1187,48 +1394,91 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
 
     function formatIntentUpdated(ts) {
       if (ts == null || !Number.isFinite(ts)) {
-        return 'Unknown time';
+        return 'Sync time unknown';
       }
       const mins = Math.max(0, Math.round((Date.now() - ts) / 60000));
       if (mins === 0) {
-        return 'Just updated';
+        return 'Goals synced just now';
       }
       if (mins < 60) {
-        return 'Updated ' + mins + ' min ago';
+        return 'Goals synced ' + mins + ' min ago';
       }
       const h = Math.floor(mins / 60);
-      return 'Updated ' + h + ' h ago';
+      return 'Goals synced ' + h + ' h ago';
     }
 
-    function paintAiIntentPanel(ai) {
+    function paintAiIntentPanel(aiIntent, activityGoals) {
       if (!aiIntentGoalsEl || !aiIntentEmptyEl) {
         return;
       }
-      const goals = (ai && ai.goals) || [];
+      function dedupeConsecutiveLines(arr) {
+        if (!arr || !arr.length) {
+          return [];
+        }
+        const out = [];
+        for (let i = 0; i < arr.length; i++) {
+          const g = arr[i];
+          if (out.length && out[out.length - 1] === g) {
+            continue;
+          }
+          out.push(g);
+        }
+        return out;
+      }
+      const fromAi = !!(aiIntent && aiIntent.goals && aiIntent.goals.length > 0);
+      const ag = activityGoals || [];
+      const goals = dedupeConsecutiveLines(fromAi ? aiIntent.goals : ag);
       aiIntentGoalsEl.innerHTML = '';
+      if (goals.length <= LIST_PREVIEW) {
+        aiGoalsExpanded = false;
+      }
+      const showAll = goals.length <= LIST_PREVIEW || aiGoalsExpanded;
+      const visibleGoals = showAll ? goals : goals.slice(0, LIST_PREVIEW);
       if (goals.length === 0) {
         aiIntentGoalsEl.hidden = true;
         aiIntentEmptyEl.hidden = false;
+        if (aiIntentGoalsToggle) {
+          aiIntentGoalsToggle.hidden = true;
+        }
       } else {
         aiIntentEmptyEl.hidden = true;
         aiIntentGoalsEl.hidden = false;
-        for (const g of goals) {
+        for (let gi = 0; gi < visibleGoals.length; gi++) {
+          const g = visibleGoals[gi];
           const li = document.createElement('li');
+          li.className = 'cr-goal-enter';
+          li.style.animationDelay = Math.min(gi, 12) * 500 + 'ms';
           li.textContent = g;
           aiIntentGoalsEl.appendChild(li);
         }
+        if (aiIntentGoalsToggle) {
+          if (goals.length > LIST_PREVIEW) {
+            aiIntentGoalsToggle.hidden = false;
+            aiIntentGoalsToggle.textContent = aiGoalsExpanded
+              ? 'Show less'
+              : 'More (+' + (goals.length - LIST_PREVIEW) + ')';
+            aiIntentGoalsToggle.setAttribute('aria-expanded', aiGoalsExpanded ? 'true' : 'false');
+          } else {
+            aiIntentGoalsToggle.hidden = true;
+          }
+        }
       }
       if (aiStatUpdated) {
-        aiStatUpdated.textContent =
-          goals.length === 0 ? 'No workspace intent yet' : formatIntentUpdated(ai && ai.updatedAt);
+        if (fromAi) {
+          aiStatUpdated.textContent = formatIntentUpdated(aiIntent.updatedAt);
+        } else if (goals.length > 0) {
+          aiStatUpdated.textContent = 'Live intent from workspace activity';
+        } else {
+          aiStatUpdated.textContent = 'Inferring operational intent…';
+        }
       }
     }
 
-    function paintAiRibbon(b, aiIntent) {
+    function paintAiRibbon(b, aiIntent, activityGoals) {
       if (!aiStatModel || !aiStatRuntime || !aiStatMode || !aiStatCtx || !aiStatTierBadge) {
         return;
       }
-      paintAiIntentPanel(aiIntent);
+      paintAiIntentPanel(aiIntent, activityGoals);
       if (!b) {
         aiStatModel.textContent = '—';
         aiStatTierBadge.hidden = true;
@@ -1245,10 +1495,11 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
         aiStatRuntime.innerHTML =
           'Cloud AI (v3)<span class="cr-ai-byok-muted"> BYOK</span>';
       }
-      const modeFromIntent = aiIntent && aiIntent.intentMode;
+      const fromAi = !!(aiIntent && aiIntent.goals && aiIntent.goals.length > 0);
+      const modeFromIntent = fromAi && aiIntent ? aiIntent.intentMode : undefined;
       aiStatMode.textContent = modeFromIntent || b.defaultAIMode || 'feature';
       const budgetTxt =
-        !b.exportTokenBudget || b.exportTokenBudget <= 0 ? 'no cap' : String(b.exportTokenBudget) + ' tokens';
+        !b.exportTokenBudget ? 'no cap' : String(b.exportTokenBudget) + ' tokens';
       aiStatCtx.textContent = 'Context ' + budgetTxt;
     }
 
@@ -1260,11 +1511,96 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       });
     }
 
-    function paintSummary(s) {
+    function paintActivityStream(items, silent) {
+      if (!activityStreamListEl) {
+        return;
+      }
+      const clockIco = document.querySelector('#sumActivity .cr-sum-ico--clock');
+      const list = items && items.length ? items : [];
+      if (list.length === 0) {
+        activityStreamListEl.innerHTML = '';
+        activityStreamListEl.hidden = true;
+        lastActivityStreamHead = '';
+        expandState.activityStream = false;
+        if (clockIco) {
+          clockIco.classList.remove('cr-sum-ico--pulse-soft');
+        }
+        return;
+      }
+      if (list.length <= LIST_PREVIEW) {
+        expandState.activityStream = false;
+      }
+      const prevHead = lastActivityStreamHead;
+      activityStreamListEl.hidden = false;
+      activityStreamListEl.innerHTML = '';
+      if (clockIco) {
+        clockIco.classList.add('cr-sum-ico--pulse-soft');
+      }
+      const streamExpanded = expandState.activityStream;
+      const lim = streamExpanded ? list.length : Math.min(list.length, LIST_PREVIEW);
+      for (let i = 0; i < lim; i++) {
+        const li = document.createElement('li');
+        li.className = 'cr-activity-feed-row';
+        li.textContent = list[i];
+        const newHead = i === 0 && list[0] && !silent && list[0] !== prevHead;
+        if (newHead) {
+          li.classList.add('cr-activity-feed-enter', 'cr-activity-feed-row--flash');
+        }
+        activityStreamListEl.appendChild(li);
+      }
+      if (list.length > LIST_PREVIEW) {
+        const toggle = document.createElement('li');
+        toggle.className = 'toggle-more';
+        toggle.textContent = streamExpanded ? 'Show less' : 'More (+' + (list.length - LIST_PREVIEW) + ')';
+        toggle.addEventListener('click', function (e) {
+          e.preventDefault();
+          expandState.activityStream = !expandState.activityStream;
+          if (lastState) {
+            paintActivityStream((lastState.activityStreamItems) || [], false);
+          }
+        });
+        activityStreamListEl.appendChild(toggle);
+      }
+      lastActivityStreamHead = list[0] || '';
+    }
+
+    function paintSummary(s, opts) {
+      const silent = opts && opts.silent === true;
       if (!s || !s.summary) return;
-      sumActiveBody.textContent = s.summary.activeFilesLine;
-      sumGitBody.textContent = s.summary.gitLine;
-      sumActivityBody.textContent = s.summary.activityLine;
+      const a = s.summary.activeFilesLine;
+      const g = s.summary.gitLine;
+      const act = s.summary.activityLine;
+      if (sumActiveBody) {
+        if (!silent && lastSumActive && a !== lastSumActive) {
+          sumActiveBody.classList.remove('cr-sum-body--anim');
+          void sumActiveBody.offsetWidth;
+          sumActiveBody.classList.add('cr-sum-body--anim');
+          setTimeout(function () { sumActiveBody.classList.remove('cr-sum-body--anim'); }, 520);
+        }
+        lastSumActive = a;
+        sumActiveBody.textContent = a;
+      }
+      if (sumGitBody) {
+        if (!silent && lastSumGit && g !== lastSumGit) {
+          sumGitBody.classList.remove('cr-sum-body--anim');
+          void sumGitBody.offsetWidth;
+          sumGitBody.classList.add('cr-sum-body--anim');
+          setTimeout(function () { sumGitBody.classList.remove('cr-sum-body--anim'); }, 520);
+        }
+        lastSumGit = g;
+        sumGitBody.textContent = g;
+      }
+      if (sumActivityBody && sumActivityLine) {
+        if (!silent && lastSumActivity && act !== lastSumActivity) {
+          sumActivityLine.classList.remove('cr-sum-line--flash');
+          void sumActivityLine.offsetWidth;
+          sumActivityLine.classList.add('cr-sum-line--flash');
+          setTimeout(function () { sumActivityLine.classList.remove('cr-sum-line--flash'); }, 1100);
+        }
+        lastSumActivity = act;
+        sumActivityBody.textContent = act;
+      }
+      paintActivityStream((s && s.activityStreamItems) || [], silent);
     }
 
     wireClick(document.getElementById('btnByokKey'), 'configureApiKey');
@@ -1275,39 +1611,157 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
     wireClick(document.getElementById('btnAiCompress'), 'compressContextPreview');
 
     function paintLists(s) {
-      renderCollapsibleList(recentEl, s.recentFiles || [], 'recent');
+      const suf = (s && s.recentFileActivitySuffixes) || [];
+      renderCollapsibleList(recentEl, s.recentFiles || [], 'recent', suf);
       renderCollapsibleList(gitStagedEl, s.gitStaged || [], 'staged');
       renderCollapsibleList(gitWorkingEl, s.gitWorking || [], 'working');
+    }
+
+    let phasedRestoreTimers = [];
+    let phasedRestoreInProgress = false;
+
+    function restoreTargets() {
+      return {
+        sumActive: document.getElementById('sumActive'),
+        sumGit: document.getElementById('sumGit'),
+        sumActivity: document.getElementById('sumActivity'),
+        secRecent: document.getElementById('crSecRecent'),
+        gitDetails: document.getElementById('crGitDetails'),
+        secAiGoals: document.getElementById('crSecAiGoals'),
+      };
+    }
+
+    function hideAllRestoreTargets() {
+      const t = restoreTargets();
+      for (const k in t) {
+        if (t[k]) t[k].classList.add('cr-restore-hidden');
+      }
+    }
+
+    function showAllRestoreTargets() {
+      const t = restoreTargets();
+      for (const k in t) {
+        if (t[k]) t[k].classList.remove('cr-restore-hidden');
+      }
+    }
+
+    function clearPhasedRestoreFull() {
+      phasedRestoreTimers.forEach(function (id) {
+        clearTimeout(id);
+      });
+      phasedRestoreTimers = [];
+      phasedRestoreInProgress = false;
+      document.documentElement.classList.remove('cr-restore-hydrating');
+      showAllRestoreTargets();
+      const statusRow = document.getElementById('aiCardStatusRow');
+      if (statusRow) statusRow.classList.remove('cr-ai-card-status--busy');
+    }
+
+    function runPhasedWorkspaceRestore(s, byok, aiIntent) {
+      const activityGoals = (s && s.activityObservedGoals) || [];
+      phasedRestoreTimers.forEach(function (id) {
+        clearTimeout(id);
+      });
+      phasedRestoreTimers = [];
+      phasedRestoreInProgress = true;
+      const t = restoreTargets();
+      document.documentElement.classList.add('cr-restore-hydrating');
+      hideAllRestoreTargets();
+      const aiTs = document.getElementById('aiTrackStatus');
+      const statusRow = document.getElementById('aiCardStatusRow');
+      if (aiTs) aiTs.textContent = 'Restoring workspace view…';
+      if (statusRow) statusRow.classList.add('cr-ai-card-status--busy');
+
+      paintSummary(s, { silent: true });
+      paintLists(s);
+      paintAiRibbon(byok, aiIntent, activityGoals);
+
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          document.documentElement.classList.remove('cr-restore-hydrating');
+        });
+      });
+
+      function reveal(el) {
+        if (el) el.classList.remove('cr-restore-hidden');
+      }
+      function rdel(ms, fn) {
+        phasedRestoreTimers.push(setTimeout(fn, ms));
+      }
+      rdel(160, function () {
+        reveal(t.sumActivity);
+      });
+      rdel(480, function () {
+        reveal(t.sumActive);
+        reveal(t.secRecent);
+      });
+      rdel(860, function () {
+        reveal(t.secAiGoals);
+        paintAiIntentPanel(aiIntent || null, activityGoals);
+      });
+      rdel(1220, function () {
+        reveal(t.sumGit);
+        reveal(t.gitDetails);
+      });
+      rdel(1660, function () {
+        if (statusRow) statusRow.classList.remove('cr-ai-card-status--busy');
+        if (aiTs) aiTs.textContent = 'Workspace tracking active';
+        bumpTrackStatus(s);
+        phasedRestoreInProgress = false;
+        phasedRestoreTimers = [];
+      });
     }
 
     window.addEventListener('message', (event) => {
       const msg = event.data;
       if (!msg || msg.type !== 'state') return;
       const s = msg.state;
-      paintByok(msg.byok || null);
-      paintAiRibbon(msg.byok || null, s && s.aiIntent ? s.aiIntent : null);
+      const byokPayload = msg.byok || null;
+      paintByok(byokPayload);
       if (!s) {
+        clearPhasedRestoreFull();
         lastState = null;
         expandState.recent = false;
         expandState.staged = false;
         expandState.working = false;
+        expandState.activityStream = false;
         taskEl.value = '';
         notesEl.value = '';
         paintTaskMeta();
-        paintLists({ recentFiles: [], gitStaged: [], gitWorking: [] });
+        paintLists({ recentFiles: [], recentFileActivitySuffixes: [], gitStaged: [], gitWorking: [] });
         sumActiveBody.textContent = '—';
         sumGitBody.textContent = '—';
-        sumActivityBody.textContent = 'Open a folder workspace to collect context.';
+        sumActivityBody.textContent = 'Open a folder to start workspace tracking.';
+        lastActivityStreamHead = '';
+        paintActivityStream([], false);
         crVersion.textContent = 'Contora';
+        lastSumGit = '';
+        lastSumActive = '';
+        lastSumActivity = '';
+        lastRecentTop = '';
+        paintAiRibbon(byokPayload, null, []);
+        bumpTrackStatus(null);
         return;
       }
+      const aiIntent = s.aiIntent || null;
+      const prevState = lastState;
       lastState = s;
       taskEl.value = s.currentTask || '';
       notesEl.value = s.notes || '';
       paintTaskMeta();
+      crVersion.textContent = 'Contora v' + (s.extensionVersion || '?');
+
+      if (prevState === null) {
+        runPhasedWorkspaceRestore(s, byokPayload, aiIntent);
+        return;
+      }
+      if (phasedRestoreInProgress) {
+        clearPhasedRestoreFull();
+      }
       paintLists(s);
       paintSummary(s);
-      crVersion.textContent = 'Contora v' + (s.extensionVersion || '?');
+      paintAiRibbon(byokPayload, aiIntent, s.activityObservedGoals || []);
+      bumpTrackStatus(s);
     });
 
     paintTaskMeta();

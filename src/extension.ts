@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import {
-  ContextBuilder,
   EventStore,
   MemoryBuilder,
   ModeEngine,
@@ -14,9 +13,7 @@ import {
   getModeStrategy,
   listIgnoredPathIssues,
   rankContextFilesWithDebug,
-  trimContextPayloadForBudget,
   trimStringToTokenBudget,
-  estimateExportAdapterOverheadTokens,
   estimateTokens,
   type ExportFormat,
 } from './core';
@@ -30,7 +27,9 @@ import { writeLatestMemoryJson } from './storage/memoryWriter';
 import { CONTORA_CONFIG_SECTION, CONTORA_IGNORE_FILE, CONTORA_LEGACY_IGNORE_FILE } from './constants';
 import { ContoraSidebarProvider } from './ui/sidebarProvider';
 import { ContoraKeyManager } from './ai/auth/keyManager';
-import { tryAppendAiSummaryOnExport } from './ai/exportOptionalAiSummary';
+import { buildAiReadyJsonExport, buildAiReadyMarkdownExport } from './ai/buildAiReadyExport';
+import { compressExportJsonForBudget, compressExportMarkdownForBudget } from './ai/aiReadyExportCompression';
+import { readExportLlmFallbackEnabled, readResolvedExportTokenBudget } from './ai/exportBudget';
 import { ProviderManager } from './ai/providers/providerManager';
 import { registerPhase3AiRuntime } from './ai/registerPhase3';
 
@@ -86,11 +85,7 @@ function maxPriorityFilesCap(strategyMax: number): number {
 }
 
 function exportTokenBudget(): number {
-  const n = vscode.workspace.getConfiguration(CONTORA_CONFIG_SECTION).get<number>('exportTokenBudget');
-  if (typeof n !== 'number' || n <= 0) {
-    return 0;
-  }
-  return Math.min(200_000, Math.max(500, n));
+  return readResolvedExportTokenBudget(vscode.workspace.getConfiguration(CONTORA_CONFIG_SECTION));
 }
 
 function mergeDiskEventLogEnabled(): boolean {
@@ -107,8 +102,11 @@ function applyIgnoreToMemory(memory: WorkspaceMemory, ig: (p: string) => boolean
   memory.gitState.staged = memory.gitState.staged.filter((f) => !ig(f));
   memory.gitState.modified = memory.gitState.modified.filter((f) => !ig(f));
   memory.recentEvents = memory.recentEvents.filter((e) => {
-    if (e.type === 'file_focus' || e.type === 'file_save') {
+    if (e.type === 'file_focus' || e.type === 'file_save' || e.type === 'file_create' || e.type === 'file_delete') {
       return !ig(e.file);
+    }
+    if (e.type === 'file_rename') {
+      return !ig(e.oldFile) && !ig(e.newFile);
     }
     return true;
   });
@@ -205,7 +203,6 @@ function startScanners(
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const stateManager = new StateManager();
   const memoryBuilder = new MemoryBuilder();
-  const contextBuilder = new ContextBuilder();
   const modeEngine = new ModeEngine();
 
   const sidebar = new ContoraSidebarProvider(context, stateManager);
@@ -311,113 +308,86 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     for (const s of scanners) {
       await s.flushNow();
     }
-    const cfgExport = vscode.workspace.getConfiguration(CONTORA_CONFIG_SECTION);
     const state = await stateManager.load(folder);
     const sessionId = state.sessionId ?? 'unknown';
-    const mode = modeEngine.normalizeMode(
-      vscode.workspace.getConfiguration(CONTORA_CONFIG_SECTION).get<string>('defaultAIMode'),
-    );
+    const cfg = vscode.workspace.getConfiguration(CONTORA_CONFIG_SECTION);
+    const mode = modeEngine.normalizeMode(cfg.get<string>('defaultAIMode'));
     const strategy = getModeStrategy(mode);
     const ig = shouldIgnore();
 
     const evAll = es.getAll();
     const evRank = evAll.length > 500 ? evAll.slice(-500) : evAll;
-
-    const pipe = rankContextFilesWithDebug(state, evRank, strategy, ig, 3);
-    let ranked = pipe.ranked;
     const analysis = analyzeActivity(evRank, state, ig);
-    const sumBlock = buildSemanticSummaryBlock(analysis, state, 8, evRank, ig, {
-      rankingDebug: pipe.debugExplanations,
+    const instruction = modeEngine.getInstruction(mode);
+
+    const baseMd = buildAiReadyMarkdownExport({
+      state,
+      eventStore: es,
+      analysis,
+      instruction,
+      shouldIgnore: ig,
     });
-    const semanticMd = sumBlock.markdown;
 
     const budget = exportTokenBudget();
-    let rankedForTop = ranked;
-    if (budget > 0) {
-      rankedForTop = allocate(ranked, budget, { semanticMarkdown: semanticMd, graphMarkdown: '' }).priorityItems;
-    }
-    const take = maxPriorityFilesCap(strategy.maxPriorityFiles);
-    const priorityTop = rankedForTop.slice(0, take);
-
-    const recent = es.getLast(eventsInPrompt());
-    const memory = memoryBuilder.build(state, recent, sessionId);
-    applyIgnoreToMemory(memory, ig);
-    memory.priorityFiles = priorityTop;
-    memory.semanticSummary = semanticMd;
-
-    const aiExtra = await tryAppendAiSummaryOnExport(
-      cfgExport,
-      memory,
-      semanticMd,
-      evRank.length,
-      aiProviders,
-    );
-    if (aiExtra) {
-      memory.aiSemanticSummary = aiExtra;
-    }
-
-    const baseQ = analyzeContextQuality({
-      estimatedSemanticTokens: estimateTokens(semanticMd),
-      exportTokenBudget: budget,
-      priorityPathCount: priorityTop.length,
-      duplicatePathCount: countDuplicatePaths([
-        ...priorityTop.map((p) => p.path),
-        ...state.openFiles,
-        ...state.recentFiles.slice(0, 24),
-      ]),
-      eventCount: evRank.length,
-      lowSignalRatio:
-        evRank.length > 0
-          ? 1 - Math.min(1, Object.keys(analysis.fileActivity).length / evRank.length)
-          : 0,
-    });
-    const quality = {
-      score: baseQ.score,
-      warnings: [...baseQ.warnings, ...listIgnoredPathIssues(priorityTop.map((p) => p.path), ig)],
-    };
-
-    const instruction = modeEngine.getInstruction(mode);
-    const promptText = contextBuilder.buildPrompt(memory, mode, instruction);
-    let payload = buildContextPayloadV2(
-      memory,
-      priorityTop,
-      semanticMd,
-      analysis,
-      mode,
-      instruction,
-      strategy.strategyLabel,
-      quality,
-    );
-
     const fmt = readExportFormat();
-    let text = formatWithAdapter(fmt, promptText, payload, mode);
+    const allowLlmCompress = readExportLlmFallbackEnabled(cfg);
+    let text: string;
 
-    if (budget > 0) {
-      if (fmt === 'json') {
-        payload = trimContextPayloadForBudget(payload, budget);
-        text = formatWithAdapter(fmt, promptText, payload, mode);
-      } else {
-        const overhead = estimateExportAdapterOverheadTokens(fmt);
-        const innerBudget = Math.max(32, budget - overhead - 2);
-        const trimmedPrompt = trimStringToTokenBudget(promptText, innerBudget);
-        text = formatWithAdapter(fmt, trimmedPrompt, payload, mode);
+    if (fmt === 'json') {
+      let obj = buildAiReadyJsonExport({
+        state,
+        eventStore: es,
+        analysis,
+        instruction,
+        shouldIgnore: ig,
+      });
+      if (budget > 0) {
+        obj = compressExportJsonForBudget(obj, budget);
       }
+      text = JSON.stringify(obj, null, 2);
+      if (budget > 0 && estimateTokens(text) > budget) {
+        text = trimStringToTokenBudget(text, budget);
+      }
+    } else {
+      let md = baseMd;
+      if (budget > 0) {
+        md = await compressExportMarkdownForBudget(baseMd, budget, fmt, aiProviders, allowLlmCompress);
+      }
+      const recent = es.getLast(eventsInPrompt());
+      const memory = memoryBuilder.build(state, recent, sessionId);
+      applyIgnoreToMemory(memory, ig);
+      memory.priorityFiles = [];
+      memory.semanticSummary = '';
+      memory.recentEvents = [];
+      memory.aiSemanticSummary = undefined;
+      const payload = buildContextPayloadV2(
+        memory,
+        [],
+        '',
+        analysis,
+        mode,
+        instruction,
+        strategy.strategyLabel,
+        undefined,
+      );
+      text = formatWithAdapter(fmt, md, payload, mode);
     }
 
     await vscode.env.clipboard.writeText(text);
 
+    const tok = estimateTokens(text);
     const fmtLabel =
       fmt === 'json'
-        ? 'JSON (schema v2)'
+        ? 'compressed JSON'
         : fmt === 'cursor'
           ? 'Cursor fences'
           : fmt === 'claude'
             ? 'Claude'
             : fmt === 'openai'
               ? 'OpenAI messages'
-              : 'Markdown blocks';
-    const note = budget > 0 && estimateTokens(text) >= budget * 0.98 ? ' (trimmed to token budget)' : '';
-    await vscode.window.showInformationMessage(`Contora: Copied context (${fmtLabel})${note}`);
+              : 'Markdown';
+    const note = budget > 0 && tok >= budget * 0.98 ? ' (near export token budget)' : '';
+    await vscode.window.showInformationMessage(`Contora: Copied AI-ready context (${fmtLabel}, ~${tok} tokens)${note}`);
   };
 
   context.subscriptions.push(vscode.commands.registerCommand('contora.exportAIContext', runExport));

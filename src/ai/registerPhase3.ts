@@ -115,7 +115,7 @@ export function registerPhase3AiRuntime(
       }
       try {
         const text = await runCloudSemanticSummary(snap.memory, snap.heuristicSemanticMarkdown, providers);
-        await openMarkdownPreview('Contora — AI semantic summary', text);
+        await openMarkdownPreview('Contora — Workspace observation (AI summary)', text);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         await vscode.window.showErrorMessage(`Contora: ${msg}`);
@@ -159,7 +159,7 @@ export function registerPhase3AiRuntime(
         } catch {
           /* ignore disk errors */
         }
-        await openMarkdownPreview('Contora — Workspace intent (JSON)', JSON.stringify(intent, null, 2));
+        await openMarkdownPreview('Contora — Workspace intent snapshot (JSON)', JSON.stringify(intent, null, 2));
         await deps.refreshSidebar?.();
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -193,7 +193,10 @@ export function registerPhase3AiRuntime(
       if (!snap) {
         return;
       }
-      const budget = Math.max(500, deps.exportTokenBudget() || 4000);
+      const budget = (() => {
+        const b = deps.exportTokenBudget();
+        return b <= 0 ? 4000 : Math.max(1, b);
+      })();
       const useAi = readAiRuntimeSettings().aiProvider !== 'off';
       try {
         const out = await compressContextText(
@@ -201,7 +204,7 @@ export function registerPhase3AiRuntime(
           providers,
           useAi,
         );
-        await openMarkdownPreview('Contora — Compressed context preview', out);
+        await openMarkdownPreview('Contora — Tightened context preview', out);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         await vscode.window.showErrorMessage(`Contora: ${msg}`);

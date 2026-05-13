@@ -2,7 +2,7 @@
   "name": "contora",
   "displayName": "Contora",
   "description": "Contora: local workspace memory (task, notes, editors, Git), event JSONL, heuristic intent/ranking, ignore rules, token budget, optional BYOK (OpenAI / Claude / Gemini / DeepSeek) — export AI-ready context to clipboard (markdown, JSON, etc.).",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -43,7 +43,7 @@
     "commands": [
       {
         "command": "contora.exportAIContext",
-        "title": "Contora: Export AI context"
+        "title": "Contora: Copy AI-ready context (clipboard)"
       },
       {
         "command": "contora.saveStateNow",
@@ -59,15 +59,15 @@
       },
       {
         "command": "contora.generateSemanticSummary",
-        "title": "Contora: Generate AI semantic summary"
+        "title": "Contora: Observe workspace (AI summary)"
       },
       {
         "command": "contora.analyzeWorkspaceIntent",
-        "title": "Contora: Analyze workspace intent (AI)"
+        "title": "Contora: Learn workspace intent (AI)"
       },
       {
         "command": "contora.compressContextPreview",
-        "title": "Contora: Compress context preview (AI)"
+        "title": "Contora: Tighten context preview (AI)"
       }
     ],
     "viewsContainers": {
@@ -145,10 +145,15 @@
         },
         "contora.exportTokenBudget": {
           "type": "number",
-          "default": 0,
+          "default": 800,
           "minimum": 0,
           "maximum": 200000,
-          "description": "Approx max tokens for export (0 = unlimited). Trims text exports or shrinks JSON payload."
+          "description": "Approximate max tokens for “Copy AI-ready context”. Default 800. Contora compresses locally toward ~500 first, allows up to ~800 without a model; if the export is still over ~800 tokens and exportLlmFallbackWhenOverBudget is on, one BYOK pass may tighten it. Set 0 for unlimited (expert). Any positive value is honored (no minimum clamp)."
+        },
+        "contora.exportLlmFallbackWhenOverBudget": {
+          "type": "boolean",
+          "default": true,
+          "description": "When the markdown export is still over ~800 tokens after local shrinking, allow one BYOK completion to compress (requires contora.aiProvider ≠ off and a key). Turn off to skip that call; local shrinking and line trim still enforce contora.exportTokenBudget when it is finite."
         },
         "contora.useDefaultIgnoreRules": {
           "type": "boolean",

@@ -72,8 +72,11 @@ export async function buildWorkspaceMemorySnapshot(
   memory.gitState.staged = memory.gitState.staged.filter((f) => !ig(f));
   memory.gitState.modified = memory.gitState.modified.filter((f) => !ig(f));
   memory.recentEvents = memory.recentEvents.filter((e) => {
-    if (e.type === 'file_focus' || e.type === 'file_save') {
+    if (e.type === 'file_focus' || e.type === 'file_save' || e.type === 'file_create' || e.type === 'file_delete') {
       return !ig(e.file);
+    }
+    if (e.type === 'file_rename') {
+      return !ig(e.oldFile) && !ig(e.newFile);
     }
     return true;
   });

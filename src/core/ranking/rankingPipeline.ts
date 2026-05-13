@@ -30,8 +30,11 @@ function collectCandidates(
     add(p);
   }
   for (const e of events) {
-    if (e.type === 'file_focus' || e.type === 'file_save') {
+    if (e.type === 'file_focus' || e.type === 'file_save' || e.type === 'file_create' || e.type === 'file_delete') {
       add(e.file);
+    } else if (e.type === 'file_rename') {
+      add(e.oldFile);
+      add(e.newFile);
     }
   }
   return [...set];

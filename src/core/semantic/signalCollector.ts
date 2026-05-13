@@ -63,6 +63,27 @@ export function collectBehavioralSignals(
       }
       saveCount[ev.file] = (saveCount[ev.file] ?? 0) + 1;
       bumpDir(directoryWeights, ev.file, 2, shouldIgnore);
+    } else if (ev.type === 'file_create') {
+      if (shouldIgnore?.(ev.file)) {
+        continue;
+      }
+      focusCount[ev.file] = (focusCount[ev.file] ?? 0) + 1;
+      bumpDir(directoryWeights, ev.file, 1, shouldIgnore);
+    } else if (ev.type === 'file_delete') {
+      if (shouldIgnore?.(ev.file)) {
+        continue;
+      }
+      saveCount[ev.file] = (saveCount[ev.file] ?? 0) + 1;
+      bumpDir(directoryWeights, ev.file, 1, shouldIgnore);
+    } else if (ev.type === 'file_rename') {
+      if (!shouldIgnore?.(ev.oldFile)) {
+        saveCount[ev.oldFile] = (saveCount[ev.oldFile] ?? 0) + 1;
+        bumpDir(directoryWeights, ev.oldFile, 1, shouldIgnore);
+      }
+      if (!shouldIgnore?.(ev.newFile)) {
+        focusCount[ev.newFile] = (focusCount[ev.newFile] ?? 0) + 1;
+        bumpDir(directoryWeights, ev.newFile, 1, shouldIgnore);
+      }
     } else if (ev.type === 'git_change') {
       for (const f of ev.modified ?? []) {
         if (shouldIgnore?.(f)) {

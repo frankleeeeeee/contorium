@@ -34,7 +34,11 @@ export class EventStore {
       switch (e.type) {
         case 'file_focus':
         case 'file_save':
+        case 'file_create':
+        case 'file_delete':
           return `${e.type}|${e.timestamp}|${e.file}`;
+        case 'file_rename':
+          return `${e.type}|${e.timestamp}|${e.oldFile}|${e.newFile}`;
         case 'git_change':
           return `${e.type}|${e.timestamp}|${e.staged.join(',')}|${e.modified.join(',')}`;
         case 'task_update':
