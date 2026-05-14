@@ -21,7 +21,8 @@ import type { WorkspaceMemory } from './core/models/workspaceMemory';
 import { IgnoreMatcher, shouldIgnoreWorkspacePath } from './core/ignore/ignoreMatcher';
 import { appendEventJsonl, EventLog } from './core/events/eventLog';
 import { WorkspaceScanner } from './scanner/workspaceScanner';
-import { StateManager } from './state/stateManager';
+import { StateManager, newSessionId } from './state/stateManager';
+import { detectWorkspaceSessionShift, topWorkspacePathsFromState } from './state/sessionBoundary';
 import { restoreEditorsFromState } from './state/recovery';
 import { writeLatestMemoryJson } from './storage/memoryWriter';
 import { CONTORA_CONFIG_SECTION, CONTORA_IGNORE_FILE, CONTORA_LEGACY_IGNORE_FILE } from './constants';
@@ -32,6 +33,8 @@ import { compressExportJsonForBudget, compressExportMarkdownForBudget } from './
 import { readExportLlmFallbackEnabled, readResolvedExportTokenBudget } from './ai/exportBudget';
 import { ProviderManager } from './ai/providers/providerManager';
 import { registerPhase3AiRuntime } from './ai/registerPhase3';
+import { clearLastIntentStore } from './ai/runtime/intent/lastIntentStore';
+import { clearSemanticSummaryCache } from './ai/runtime/semanticSummary/summaryCache';
 
 let scanners: WorkspaceScanner[] = [];
 let workspaceIgnoreMatcher: IgnoreMatcher | undefined;
@@ -113,6 +116,62 @@ function applyIgnoreToMemory(memory: WorkspaceMemory, ig: (p: string) => boolean
 }
 
 let globalEventStore: EventStore | undefined;
+
+/** Baseline for “session shift” detection (Current focus + top paths). Reset on workspace sync / Start fresh. */
+let sessionBoundaryBaseline: { focus: string; paths: string[] } | undefined;
+let sessionBoundaryCooldownUntil = 0;
+let sessionBoundaryPromptLock = false;
+const SESSION_SHIFT_COOLDOWN_MS = 90_000;
+
+async function handleSessionBoundaryAfterTaskEdit(
+  folder: vscode.WorkspaceFolder,
+  newTask: string,
+  stateManager: StateManager,
+  refreshSidebar: () => void,
+): Promise<void> {
+  const st = stateManager.getCached(folder) ?? (await stateManager.load(folder));
+  const paths = topWorkspacePathsFromState(st);
+  const nextFocus = (newTask ?? '').trim();
+
+  if (!sessionBoundaryBaseline) {
+    sessionBoundaryBaseline = { focus: nextFocus, paths: [...paths] };
+    return;
+  }
+
+  const now = Date.now();
+  if (now < sessionBoundaryCooldownUntil || sessionBoundaryPromptLock) {
+    sessionBoundaryBaseline = { focus: nextFocus, paths: [...paths] };
+    return;
+  }
+
+  if (
+    !detectWorkspaceSessionShift(sessionBoundaryBaseline.focus, nextFocus, sessionBoundaryBaseline.paths, paths)
+  ) {
+    sessionBoundaryBaseline = { focus: nextFocus, paths: [...paths] };
+    return;
+  }
+
+  sessionBoundaryPromptLock = true;
+  try {
+    const pick = await vscode.window.showInformationMessage(
+      'Detected a major workspace shift. Start a fresh AI context session?',
+      'Start fresh',
+      'Keep current',
+    );
+    if (pick === 'Start fresh') {
+      await vscode.commands.executeCommand('contora.startFreshAiSession');
+    }
+  } finally {
+    sessionBoundaryPromptLock = false;
+    sessionBoundaryCooldownUntil = Date.now() + SESSION_SHIFT_COOLDOWN_MS;
+    const st2 = stateManager.getCached(folder) ?? (await stateManager.load(folder));
+    sessionBoundaryBaseline = {
+      focus: (st2.currentTask ?? '').trim(),
+      paths: topWorkspacePathsFromState(st2),
+    };
+    refreshSidebar();
+  }
+}
 
 function createEventStore(stateManager: StateManager): EventStore {
   return new EventStore(eventBufferCap(), (ev) => {
@@ -205,7 +264,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const memoryBuilder = new MemoryBuilder();
   const modeEngine = new ModeEngine();
 
-  const sidebar = new ContoraSidebarProvider(context, stateManager);
+  let sidebar!: ContoraSidebarProvider;
+  const onAfterTaskUpdated = (folder: vscode.WorkspaceFolder, task: string): void => {
+    void handleSessionBoundaryAfterTaskEdit(folder, task, stateManager, () => {
+      void sidebar.refresh();
+    });
+  };
+  sidebar = new ContoraSidebarProvider(context, stateManager, undefined, onAfterTaskUpdated);
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(ContoraSidebarProvider.viewId, sidebar, {
@@ -229,6 +294,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       workspaceIgnoreMatcher = undefined;
     }
     await mergeDiskIfEnabled(stateManager, globalEventStore);
+    const folderAfter = stateManager.getPrimaryFolder();
+    if (folderAfter) {
+      const st0 = stateManager.getCached(folderAfter) ?? (await stateManager.load(folderAfter));
+      sessionBoundaryBaseline = {
+        focus: (st0.currentTask ?? '').trim(),
+        paths: topWorkspacePathsFromState(st0),
+      };
+    } else {
+      sessionBoundaryBaseline = undefined;
+    }
   };
 
   await syncWorkspace();
@@ -309,6 +384,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await s.flushNow();
     }
     const state = await stateManager.load(folder);
+    const taskTrim = (state.currentTask ?? '').trim();
     const sessionId = state.sessionId ?? 'unknown';
     const cfg = vscode.workspace.getConfiguration(CONTORA_CONFIG_SECTION);
     const mode = modeEngine.normalizeMode(cfg.get<string>('defaultAIMode'));
@@ -387,10 +463,53 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               ? 'OpenAI messages'
               : 'Markdown';
     const note = budget > 0 && tok >= budget * 0.98 ? ' (near export token budget)' : '';
-    await vscode.window.showInformationMessage(`Contora: Copied AI-ready context (${fmtLabel}, ~${tok} tokens)${note}`);
+    let msg = `Contora: Copied AI-ready context (${fmtLabel}, ~${tok} tokens)${note}`;
+    if (!taskTrim) {
+      msg += ' — AI continuity works better with a focus goal.';
+    }
+    await vscode.window.showInformationMessage(msg);
   };
 
   context.subscriptions.push(vscode.commands.registerCommand('contora.exportAIContext', runExport));
+
+  const runStartFreshAiSession = async (): Promise<void> => {
+    const folder = stateManager.getPrimaryFolder();
+    if (!folder) {
+      await vscode.window.showWarningMessage('Contora: Open a folder workspace first.');
+      return;
+    }
+    const es = globalEventStore;
+    if (!es) {
+      return;
+    }
+    for (const s of scanners) {
+      await s.flushNow();
+    }
+    const lastIntentUri = vscode.Uri.joinPath(folder.uri, '.contora', 'last-intent.json');
+    try {
+      await vscode.workspace.fs.delete(lastIntentUri, { useTrash: false });
+    } catch {
+      /* missing or unreadable file is OK */
+    }
+    clearLastIntentStore();
+    clearSemanticSummaryCache();
+    es.clear();
+    await stateManager.update(folder, { sessionId: newSessionId() });
+    await mergeDiskIfEnabled(stateManager, es);
+    const st0 = stateManager.getCached(folder) ?? (await stateManager.load(folder));
+    sessionBoundaryBaseline = {
+      focus: (st0.currentTask ?? '').trim(),
+      paths: topWorkspacePathsFromState(st0),
+    };
+    void sidebar.refresh();
+    await vscode.window.showInformationMessage(
+      'Contora: Fresh AI context session started. Session activity was cleared; workspace files and Git are unchanged.',
+    );
+  };
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('contora.startFreshAiSession', runStartFreshAiSession),
+  );
 
   registerPhase3AiRuntime(
     context,

@@ -24,7 +24,8 @@ type WebviewToExt =
   | { type: 'compressContextPreview' }
   | { type: 'updateTask'; value: string }
   | { type: 'updateNotes'; value: string }
-  | { type: 'openFile'; relativePath: string };
+  | { type: 'openFile'; relativePath: string }
+  | { type: 'startFreshAiSession' };
 
 const TASK_MAX = 500;
 
@@ -40,6 +41,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
     private readonly ctx: vscode.ExtensionContext,
     private readonly stateManager: StateManager,
     events?: EventStore,
+    private readonly onAfterTaskUpdated?: (folder: vscode.WorkspaceFolder, newTask: string) => void,
   ) {
     this.keys = new ContoraKeyManager(ctx.secrets);
     this.events = events;
@@ -101,6 +103,10 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
         await vscode.commands.executeCommand('contora.compressContextPreview');
         return;
       }
+      if (msg.type === 'startFreshAiSession') {
+        await vscode.commands.executeCommand('contora.startFreshAiSession');
+        return;
+      }
       const folder = this.folder ?? this.stateManager.getPrimaryFolder();
       if (!folder) {
         vscode.window.showWarningMessage('Contora: Open a folder workspace first.');
@@ -110,6 +116,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
         const task = (msg.value ?? '').slice(0, TASK_MAX);
         await this.stateManager.update(folder, { currentTask: task });
         this.events?.add({ type: 'task_update', task, timestamp: Date.now() });
+        this.onAfterTaskUpdated?.(folder, task);
         void this.pushStateToWebview();
         return;
       }
@@ -1035,13 +1042,13 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
             <span id="taskCount">0 / ${TASK_MAX}</span>
           </span>
         </div>
-        <textarea id="task" class="cr-task-input" rows="2" maxlength="${TASK_MAX}" placeholder="What you are focused on right now (optional; also informed by workspace activity)."></textarea>
-        <p id="taskActivityHint" class="cr-byok-muted">Updated automatically from recent work</p>
+        <textarea id="task" class="cr-task-input" rows="2" maxlength="${TASK_MAX}" placeholder="What are you working on right now?"></textarea>
+        <p id="taskActivityHint" class="cr-byok-muted">Optional — improves direction for AI-ready export</p>
         <div id="crSecAiGoals">
         <p class="cr-ai-goals-label">Operational intent</p>
         <ul id="aiIntentGoals" class="cr-ai-goals-list" hidden></ul>
         <button type="button" id="aiIntentGoalsToggle" class="cr-ai-goals-toggle" hidden aria-expanded="false"></button>
-        <p id="aiIntentEmpty" class="cr-ai-goals-empty cr-text-shimmer">Inferring what you are working on from edits, saves, and Git signals — or run &quot;Learn workspace intent&quot; for a structured AI snapshot.</p>
+        <p id="aiIntentEmpty" class="cr-ai-goals-empty">No active focus. Waiting for workspace activity.</p>
         </div>
       </div>
       <div class="cr-ai-side-strip" aria-label="Model and runtime summary">
@@ -1469,7 +1476,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
         } else if (goals.length > 0) {
           aiStatUpdated.textContent = 'Live intent from workspace activity';
         } else {
-          aiStatUpdated.textContent = 'Inferring operational intent…';
+          aiStatUpdated.textContent = 'Waiting for workspace activity';
         }
       }
     }

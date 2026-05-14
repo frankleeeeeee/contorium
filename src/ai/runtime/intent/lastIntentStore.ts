@@ -11,3 +11,8 @@ export function setLastIntentJson(obj: unknown): void {
 export function getLastIntentJson(): string | null {
   return lastIntentJson;
 }
+
+/** Clears in-memory intent snapshot (e.g. Start fresh session). */
+export function clearLastIntentStore(): void {
+  lastIntentJson = null;
+}

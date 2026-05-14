@@ -1,5 +1,7 @@
 # Contora
 
+![Contora: restore workspace context for AI](demo.gif)
+
 # Persistent Memory Layer for AI Coding
 
 Contora gives AI a continuous understanding of your workspace, goals, Git changes, and coding sessions.

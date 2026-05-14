@@ -2,7 +2,7 @@
   "name": "contora",
   "displayName": "Contora",
   "description": "Contora: local workspace memory (task, notes, editors, Git), event JSONL, heuristic intent/ranking, ignore rules, token budget, optional BYOK (OpenAI / Claude / Gemini / DeepSeek) — export AI-ready context to clipboard (markdown, JSON, etc.).",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -36,7 +36,8 @@
     "onCommand:contora.configureApiKey",
     "onCommand:contora.generateSemanticSummary",
     "onCommand:contora.analyzeWorkspaceIntent",
-    "onCommand:contora.compressContextPreview"
+    "onCommand:contora.compressContextPreview",
+    "onCommand:contora.startFreshAiSession"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -68,6 +69,10 @@
       {
         "command": "contora.compressContextPreview",
         "title": "Contora: Tighten context preview (AI)"
+      },
+      {
+        "command": "contora.startFreshAiSession",
+        "title": "Contora: Start fresh AI context session (clear session events)"
       }
     ],
     "viewsContainers": {
