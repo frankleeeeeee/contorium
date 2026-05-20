@@ -1,6 +1,6 @@
 {
   "name": "@contora/runtime",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Contora runtime: RuntimeProvider, BYOK prompt builders, and ranking hooks.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

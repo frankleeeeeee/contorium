@@ -9,21 +9,40 @@
     "src/ui/sidebarProvider.ts",
     "package-lock.json"
   ],
-  "recentFiles": [],
-  "gitStaged": [],
-  "gitWorking": [
+  "recentFiles": [
+    "package-lock.json",
+    "记忆系统优化1.md"
+  ],
+  "gitStaged": [
     ".contora/events/sess_moz8l51n_4349b682.jsonl",
     ".contora/state.json",
-    "README.md",
     "package-lock.json",
     "package.json",
     "packages/runtime/package.json",
-    "src/ai/runtime/intent/lastIntentStore.ts",
+    "src/ai/buildAiReadyExport.ts",
+    "src/ai/registerPhase3.ts",
+    "src/core/memory/intentStore.ts",
+    "src/core/memory/memoryLifecycle.ts",
     "src/extension.ts",
+    "src/ui/heuristicOperationalIntent.ts",
     "src/ui/sidebarProvider.ts",
-    "demo.gif",
-    "src/state/sessionBoundary.ts"
+    "src/ui/sidebarViewModel.ts"
+  ],
+  "gitWorking": [
+    ".contora/events/sess_moz8l51n_4349b682.jsonl",
+    ".contora/state.json",
+    "package-lock.json",
+    "package.json",
+    "packages/runtime/package.json",
+    "src/ai/buildAiReadyExport.ts",
+    "src/ai/registerPhase3.ts",
+    "src/extension.ts",
+    "src/ui/heuristicOperationalIntent.ts",
+    "src/ui/sidebarProvider.ts",
+    "src/ui/sidebarViewModel.ts",
+    "src/core/memory/intentStore.ts",
+    "src/core/memory/memoryLifecycle.ts"
   ],
   "notes": "",
-  "lastUpdated": 1778726431899
+  "lastUpdated": 1779276228424
 }

@@ -35,6 +35,7 @@ import { ProviderManager } from './ai/providers/providerManager';
 import { registerPhase3AiRuntime } from './ai/registerPhase3';
 import { clearLastIntentStore } from './ai/runtime/intent/lastIntentStore';
 import { clearSemanticSummaryCache } from './ai/runtime/semanticSummary/summaryCache';
+import { loadUsableIntentFocusLines } from './core/memory/intentStore';
 
 let scanners: WorkspaceScanner[] = [];
 let workspaceIgnoreMatcher: IgnoreMatcher | undefined;
@@ -395,6 +396,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const evRank = evAll.length > 500 ? evAll.slice(-500) : evAll;
     const analysis = analyzeActivity(evRank, state, ig);
     const instruction = modeEngine.getInstruction(mode);
+    const confirmedAiIntentGoals = await loadUsableIntentFocusLines(folder, state, es);
 
     const baseMd = buildAiReadyMarkdownExport({
       state,
@@ -402,6 +404,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       analysis,
       instruction,
       shouldIgnore: ig,
+      confirmedAiIntentGoals,
     });
 
     const budget = exportTokenBudget();
@@ -416,6 +419,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         analysis,
         instruction,
         shouldIgnore: ig,
+        confirmedAiIntentGoals,
       });
       if (budget > 0) {
         obj = compressExportJsonForBudget(obj, budget);
@@ -595,14 +599,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             score: baseQ.score,
             warnings: [...baseQ.warnings, ...listIgnoredPathIssues(priorityTop.map((p) => p.path), ig)],
           };
+          const intentEval = await loadUsableIntentFocusLines(folder, state);
           const fp = await writeLatestMemoryJson(folder.uri.fsPath, {
             savedAt: Date.now(),
+            sessionId: state.sessionId ?? 'unknown',
             mode,
             strategyLabel: strategy.strategyLabel,
             memory,
             analysis,
             intelligence: sumBlock.intelligence,
             quality,
+            lifecycle: {
+              qualityScore: quality.score,
+              hasUsableAiIntent: !!intentEval?.length,
+              heuristicIntentWindowHours: 2,
+            },
           });
           void fp;
         } catch {

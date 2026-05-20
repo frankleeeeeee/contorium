@@ -33,6 +33,10 @@ export interface SidebarAiIntentPanel {
   intentMode?: string;
   /** File mtime of `.contora/last-intent.json`, or `Date.now()` when read from memory only. */
   updatedAt?: number;
+  /** 0–1 after lifecycle evaluation; omitted when heuristic-only. */
+  confidence?: number;
+  /** True when related files / age lowered confidence below usable threshold. */
+  stale?: boolean;
 }
 
 /** Shape sent to the sidebar webview (paths pre-filtered). Workspace fields only — BYOK is sent as sibling `byok` on the message. */

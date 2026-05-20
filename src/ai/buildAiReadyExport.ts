@@ -150,12 +150,33 @@ function buildProjectContextSentence(
   return 'Workspace activity is light — open or edit files to build richer context.';
 }
 
-function workspaceFocusBullets(state: ProjectState, eventStore: EventStore | undefined): string[] {
+function workspaceFocusBullets(
+  state: ProjectState,
+  eventStore: EventStore | undefined,
+  confirmedAiGoals?: string[],
+): string[] {
   const lines = buildHeuristicOperationalIntentLines(state, eventStore, 8);
   const task = (state.currentTask ?? '').trim();
   const withoutStated = task ? lines.filter((l) => !l.startsWith('Stated focus:')) : lines;
+  const merged: string[] = [];
+  const seen = new Set<string>();
+  for (const g of confirmedAiGoals ?? []) {
+    const t = g.trim();
+    if (!t || seen.has(t)) {
+      continue;
+    }
+    seen.add(t);
+    merged.push(t);
+  }
+  for (const l of withoutStated) {
+    if (seen.has(l)) {
+      continue;
+    }
+    seen.add(l);
+    merged.push(l);
+  }
   /** Doc §10: top 3 intents for “Workspace focus” in export. */
-  return withoutStated.slice(0, 3);
+  return merged.slice(0, 3);
 }
 
 export function buildAiReadyJsonExport(args: {
@@ -164,9 +185,11 @@ export function buildAiReadyJsonExport(args: {
   analysis: ActivityAnalysis;
   instruction: string;
   shouldIgnore?: (p: string) => boolean;
+  /** High-confidence persisted intent lines; omitted when lifecycle marked stale. */
+  confirmedAiIntentGoals?: string[];
 }): AiReadyJsonExport {
-  const { state, eventStore, analysis, instruction, shouldIgnore } = args;
-  const focus = workspaceFocusBullets(state, eventStore);
+  const { state, eventStore, analysis, instruction, shouldIgnore, confirmedAiIntentGoals } = args;
+  const focus = workspaceFocusBullets(state, eventStore, confirmedAiIntentGoals);
   const active = pickActiveFileBasenames(state, analysis, shouldIgnore, 5);
   const recent = pickRecentWorkLines(eventStore, 5);
   const notes = (state.notes ?? '').trim();
@@ -191,6 +214,7 @@ export function buildAiReadyMarkdownExport(args: {
   analysis: ActivityAnalysis;
   instruction: string;
   shouldIgnore?: (p: string) => boolean;
+  confirmedAiIntentGoals?: string[];
 }): string {
   const j = buildAiReadyJsonExport(args);
   const lines: string[] = [];

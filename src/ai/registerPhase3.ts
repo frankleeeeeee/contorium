@@ -15,7 +15,7 @@ export interface Phase3SharedClients {
 import { readAiRuntimeSettings } from './auth/providerConfig';
 import { runCloudSemanticSummary } from './runtime/semanticSummary/summaryEngine';
 import { runWorkspaceIntentAnalysis } from './runtime/intent/intentEngine';
-import { setLastIntentJson } from './runtime/intent/lastIntentStore';
+import { writePersistedIntent } from '../core/memory/intentStore';
 import { compressContextText } from './runtime/compression/compressionEngine';
 
 export interface Phase3RegisterDeps {
@@ -150,15 +150,8 @@ export function registerPhase3AiRuntime(
       }
       try {
         const intent = await runWorkspaceIntentAnalysis(snap.memory, providers);
-        setLastIntentJson(intent);
-        try {
-          const dirUri = vscode.Uri.joinPath(folder.uri, '.contora');
-          await vscode.workspace.fs.createDirectory(dirUri);
-          const intentUri = vscode.Uri.joinPath(dirUri, 'last-intent.json');
-          await vscode.workspace.fs.writeFile(intentUri, Buffer.from(JSON.stringify(intent, null, 2), 'utf8'));
-        } catch {
-          /* ignore disk errors */
-        }
+        const relatedFiles = (snap.memory.priorityFiles ?? []).map((p) => p.path);
+        await writePersistedIntent(folder, intent, relatedFiles);
         await openMarkdownPreview('Contora — Workspace intent snapshot (JSON)', JSON.stringify(intent, null, 2));
         await deps.refreshSidebar?.();
       } catch (e) {

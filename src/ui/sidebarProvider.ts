@@ -4,8 +4,9 @@ import { readAiRuntimeSettings } from '../ai/auth/providerConfig';
 import { CONTORA_CONFIG_SECTION } from '../constants';
 import { readResolvedExportTokenBudget } from '../ai/exportBudget';
 import type { EventStore } from '../core/engine/eventStore';
-import { getLastIntentJson } from '../ai/runtime/intent/lastIntentStore';
+import { intentToGoals, readAndEvaluatePersistedIntent } from '../core/memory/intentStore';
 import { StateManager } from '../state/stateManager';
+import type { ProjectState } from '../types/state';
 import {
   buildSidebarWebviewState,
   type SidebarAiIntentPanel,
@@ -202,50 +203,34 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
     };
   }
 
-  private async readAiIntentForFolder(folder: vscode.WorkspaceFolder): Promise<SidebarAiIntentPanel> {
+  private async readAiIntentForFolder(
+    folder: vscode.WorkspaceFolder,
+    state: ProjectState,
+  ): Promise<SidebarAiIntentPanel> {
     const empty: SidebarAiIntentPanel = { goals: [] };
-    const parseRecord = (o: Record<string, unknown>): SidebarAiIntentPanel => {
-      const mods = Array.isArray(o.activeModules)
-        ? o.activeModules
-            .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
-            .map((s) => s.trim())
-        : [];
-      const focus = typeof o.focus === 'string' && o.focus.trim() ? o.focus.trim() : '';
-      let goals = mods.slice(0, 12);
-      if (goals.length === 0 && focus) {
-        goals = [focus];
-      }
-      const intentMode = typeof o.mode === 'string' && o.mode.trim() ? o.mode.trim() : undefined;
-      return { goals, intentMode };
-    };
-    const uri = vscode.Uri.joinPath(folder.uri, '.contora', 'last-intent.json');
-    try {
-      const [stat, bytes] = await Promise.all([vscode.workspace.fs.stat(uri), vscode.workspace.fs.readFile(uri)]);
-      const text = Buffer.from(bytes).toString('utf8');
-      const parsed = JSON.parse(text) as unknown;
-      if (!parsed || typeof parsed !== 'object') {
-        return empty;
-      }
-      const out = parseRecord(parsed as Record<string, unknown>);
-      out.updatedAt = stat.mtime;
-      return out;
-    } catch {
-      const j = getLastIntentJson();
-      if (!j) {
-        return empty;
-      }
-      try {
-        const parsed = JSON.parse(j) as unknown;
-        if (!parsed || typeof parsed !== 'object') {
-          return empty;
-        }
-        const out = parseRecord(parsed as Record<string, unknown>);
-        out.updatedAt = Date.now();
-        return out;
-      } catch {
-        return empty;
-      }
+    const evaluated = await readAndEvaluatePersistedIntent(folder, state, this.events);
+    if (!evaluated) {
+      return empty;
     }
+    const { file, usable } = evaluated;
+    const lc = file.lifecycle;
+    if (!usable) {
+      return {
+        goals: [],
+        stale: true,
+        confidence: lc.confidence,
+        updatedAt: lc.lastUpdatedAt,
+      };
+    }
+    const goals = intentToGoals(file.intent);
+    const intentMode = file.intent.mode.trim() ? file.intent.mode.trim() : undefined;
+    return {
+      goals,
+      intentMode,
+      confidence: lc.confidence,
+      stale: lc.status !== 'active',
+      updatedAt: lc.lastUpdatedAt,
+    };
   }
 
   private async pushStateToWebview(): Promise<void> {
@@ -261,7 +246,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
     const state = await this.stateManager.load(folder);
     const ver = String((this.ctx.extension.packageJSON as { version?: string }).version ?? '');
     const base = buildSidebarWebviewState(state, this.events, ver);
-    const aiIntent = await this.readAiIntentForFolder(folder);
+    const aiIntent = await this.readAiIntentForFolder(folder, state);
     this.view.webview.postMessage({ type: 'state', state: { ...base, aiIntent }, byok });
   }
 
@@ -1472,7 +1457,12 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       }
       if (aiStatUpdated) {
         if (fromAi) {
-          aiStatUpdated.textContent = formatIntentUpdated(aiIntent.updatedAt);
+          const age = formatIntentUpdated(aiIntent.updatedAt);
+          aiStatUpdated.textContent = aiIntent.stale
+            ? 'Intent may be outdated · ' + age
+            : age;
+        } else if (aiIntent && aiIntent.stale) {
+          aiStatUpdated.textContent = 'Previous intent outdated — using live activity';
         } else if (goals.length > 0) {
           aiStatUpdated.textContent = 'Live intent from workspace activity';
         } else {

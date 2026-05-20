@@ -126,24 +126,13 @@ function applyGitRules(
   }
 }
 
-/**
- * Heuristic operational intent bullets (doc: score pool, §9 decay, §17 edit/save weights).
- * Shown when persisted LLM intent (`aiIntent.goals`) is empty.
- */
-export function buildHeuristicOperationalIntentLines(
+/** Fill intent score pool (shared by sidebar bullets + memory lifecycle reinforcement). */
+function fillHeuristicIntentPool(
   state: ProjectState,
   events: EventStore | undefined,
-  maxItems: number,
-): string[] {
-  const max = Math.max(1, Math.min(24, maxItems));
-  const out: string[] = [];
-  const task = (state.currentTask ?? '').trim();
-  if (task) {
-    out.push('Stated focus: ' + (task.length > 52 ? task.slice(0, 49) + '…' : task));
-  }
-
-  const pool = new Map<string, number>();
-  const now = Date.now();
+  pool: Map<string, number>,
+  now: number,
+): void {
   const gitStaged = filterEngineeringPaths(state.gitStaged ?? []);
   const gitWorking = filterEngineeringPaths(state.gitWorking ?? []);
   applyGitRules(gitStaged, gitWorking, pool, 1);
@@ -153,12 +142,14 @@ export function buildHeuristicOperationalIntentLines(
     accumulatePathIntents(r, pool, 0.35);
   }
 
-  if (events) {
-    const all = events.getAll();
-    const window = sliceEventsForIntentSession(all, now);
-    let prevPath: string | undefined;
+  if (!events) {
+    return;
+  }
+  const all = events.getAll();
+  const window = sliceEventsForIntentSession(all, now);
+  let prevPath: string | undefined;
 
-    for (const ev of window) {
+  for (const ev of window) {
       if (ev.type === 'file_create') {
         const rel = filterEngineeringPaths([ev.file])[0];
         if (!rel) {
@@ -223,7 +214,41 @@ export function buildHeuristicOperationalIntentLines(
       add(pool, 'general', 0.45 * w);
       prevPath = rel;
     }
+}
+
+/** Top pool keys for memory reinforcement / semantic profile (no LLM). */
+export function topHeuristicActivityKeys(
+  state: ProjectState,
+  events: EventStore | undefined,
+  maxKeys = 8,
+): string[] {
+  const pool = new Map<string, number>();
+  fillHeuristicIntentPool(state, events, pool, Date.now());
+  return [...pool.entries()]
+    .filter(([, s]) => s >= SCORE_FLOOR)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, Math.max(1, maxKeys))
+    .map(([k]) => k);
+}
+
+/**
+ * Heuristic operational intent bullets (doc: score pool, §9 decay, §17 edit/save weights).
+ * Shown when persisted LLM intent (`aiIntent.goals`) is empty.
+ */
+export function buildHeuristicOperationalIntentLines(
+  state: ProjectState,
+  events: EventStore | undefined,
+  maxItems: number,
+): string[] {
+  const max = Math.max(1, Math.min(24, maxItems));
+  const out: string[] = [];
+  const task = (state.currentTask ?? '').trim();
+  if (task) {
+    out.push('Stated focus: ' + (task.length > 52 ? task.slice(0, 49) + '…' : task));
   }
+
+  const pool = new Map<string, number>();
+  fillHeuristicIntentPool(state, events, pool, Date.now());
 
   const ranked = [...pool.entries()]
     .filter(([, s]) => s >= SCORE_FLOOR)
