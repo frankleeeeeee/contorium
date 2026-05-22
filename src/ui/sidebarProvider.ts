@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { ContoraKeyManager } from '../ai/auth/keyManager';
 import { readAiRuntimeSettings } from '../ai/auth/providerConfig';
-import { CONTORA_CONFIG_SECTION } from '../constants';
+import { CONTORA_CONFIG_SECTION, PRODUCT_DISPLAY_NAME } from '../constants';
 import { readResolvedExportTokenBudget } from '../ai/exportBudget';
 import type { EventStore } from '../core/engine/eventStore';
 import { intentToGoals, readAndEvaluatePersistedIntent } from '../core/memory/intentStore';
@@ -110,7 +110,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       }
       const folder = this.folder ?? this.stateManager.getPrimaryFolder();
       if (!folder) {
-        vscode.window.showWarningMessage('Contora: Open a folder workspace first.');
+        vscode.window.showWarningMessage(`${PRODUCT_DISPLAY_NAME}: Open a folder workspace first.`);
         return;
       }
       if (msg.type === 'updateTask') {
@@ -325,7 +325,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="${cspAttr}" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contora</title>
+  <title>${PRODUCT_DISPLAY_NAME}</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -1005,7 +1005,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
 </head>
 <body>
   <header class="cr-header">
-    <div class="cr-brand"><span class="cr-logo">C</span> CONTORA</div>
+    <div class="cr-brand"><span class="cr-logo">C</span> CONTORIUM</div>
     <div class="cr-header-actions" aria-hidden="true">
       <span class="cr-icon-pill" title="Decorative">${ico.refresh}</span>
       <span class="cr-icon-pill" title="Decorative">${ico.more}</span>
@@ -1133,7 +1133,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       <p class="cr-byok-warn" id="byokWarn" hidden>Set <code>contora.aiProvider</code> and save the vendor API key in SecretStorage (never in <code>settings.json</code>).</p>
       <div class="cr-grid2" style="margin-top:10px">
         <button type="button" class="cr-secondary" id="btnByokKey" title="OpenAI / Anthropic / Gemini / DeepSeek">${ico.gear}<span>Configure API key…</span></button>
-        <button type="button" class="cr-secondary" id="btnByokSettings" title="Models, export format, token budget…">${ico.spark}<span>Contora settings</span></button>
+        <button type="button" class="cr-secondary" id="btnByokSettings" title="Models, export format, token budget…">${ico.spark}<span>${PRODUCT_DISPLAY_NAME} settings</span></button>
       </div>
       <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
         <button type="button" class="cr-tertiary" id="btnAiSemantic">Observe workspace (AI summary)</button>
@@ -1144,10 +1144,10 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
   </section>
 
   <footer class="cr-footer">
-    <span id="crVersion">Contora</span>
+    <span id="crVersion">${PRODUCT_DISPLAY_NAME}</span>
     <span class="cr-local">
       <span class="cr-dot" title="Session data stays on this machine"></span> Local data only
-      <span class="cr-footer-gear" id="btnFooterSettings" role="button" tabindex="0" title="Open Contora settings">${ico.gear}</span>
+      <span class="cr-footer-gear" id="btnFooterSettings" role="button" tabindex="0" title="Open ${PRODUCT_DISPLAY_NAME} settings">${ico.gear}</span>
     </span>
   </footer>
 
@@ -1347,7 +1347,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
         byokWarn.hidden = true;
         return;
       }
-      byokRuntime.textContent = 'Runtime: Contora (@contora/runtime)';
+      byokRuntime.textContent = 'Runtime: ${PRODUCT_DISPLAY_NAME} (@contora/runtime)';
       const labels = {
         off: 'Off (observing locally only)',
         openai: 'OpenAI',
@@ -1731,7 +1731,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
         sumActivityBody.textContent = 'Open a folder to start workspace tracking.';
         lastActivityStreamHead = '';
         paintActivityStream([], false);
-        crVersion.textContent = 'Contora';
+        crVersion.textContent = '${PRODUCT_DISPLAY_NAME}';
         lastSumGit = '';
         lastSumActive = '';
         lastSumActivity = '';
@@ -1746,7 +1746,7 @@ export class ContoraSidebarProvider implements vscode.WebviewViewProvider {
       taskEl.value = s.currentTask || '';
       notesEl.value = s.notes || '';
       paintTaskMeta();
-      crVersion.textContent = 'Contora v' + (s.extensionVersion || '?');
+      crVersion.textContent = '${PRODUCT_DISPLAY_NAME} v' + (s.extensionVersion || '?');
 
       if (prevState === null) {
         runPhasedWorkspaceRestore(s, byokPayload, aiIntent);

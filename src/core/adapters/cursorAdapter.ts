@@ -2,8 +2,8 @@ import { normalizeExportMarkdown } from './markdownAdapter';
 
 const LEGACY_START = '// CONTEXTRECALL CONTEXT START';
 const LEGACY_END = '// CONTEXTRECALL CONTEXT END';
-const ALT_START = '// CONTORA_CTX_BLOCK_BEGIN';
-const ALT_END = '// CONTORA_CTX_BLOCK_END';
+const ALT_START = '// CONTORIUM_CTX_BLOCK_BEGIN';
+const ALT_END = '// CONTORIUM_CTX_BLOCK_END';
 
 /**
  * Wrap prompt in line-based fences. If the body contains the same fence lines as its own line

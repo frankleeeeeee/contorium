@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CONTORA_CONFIG_SECTION } from '../constants';
+import { CONTORA_CONFIG_SECTION, PRODUCT_DISPLAY_NAME } from '../constants';
 import type { EventStore } from '../core/engine/eventStore';
 import { MemoryBuilder } from '../core/engine/memoryBuilder';
 import { ModeEngine } from '../core/context/modeEngine';
@@ -28,7 +28,7 @@ export interface Phase3RegisterDeps {
   exportTokenBudget: () => number;
   maxPriorityFilesCap: (strategyMax: number) => number;
   shouldIgnore: () => (p: string) => boolean;
-  /** Refresh Contora sidebar after AI intent is written so goals list updates. */
+  /** Refresh ${PRODUCT_DISPLAY_NAME} sidebar after AI intent is written so goals list updates. */
   refreshSidebar?: () => void | Promise<void>;
 }
 
@@ -56,9 +56,9 @@ export function registerPhase3AiRuntime(
           { label: 'Anthropic (Claude)', description: 'anthropic' },
           { label: 'Google Gemini', description: 'google' },
           { label: 'DeepSeek', description: 'deepseek' },
-          { label: 'Clear all Contora API keys', description: 'clear' },
+          { label: `Clear all ${PRODUCT_DISPLAY_NAME} API keys`, description: 'clear' },
         ],
-        { title: 'Contora: API key (stored in SecretStorage only)' },
+        { title: `${PRODUCT_DISPLAY_NAME}: API key (stored in SecretStorage only)` },
       );
       if (!sel?.description) {
         return;
@@ -68,12 +68,12 @@ export function registerPhase3AiRuntime(
         await keys.deleteKey('anthropic');
         await keys.deleteKey('google');
         await keys.deleteKey('deepseek');
-        await vscode.window.showInformationMessage('Contora: Cleared stored API keys.');
+        await vscode.window.showInformationMessage(`${PRODUCT_DISPLAY_NAME}: Cleared stored API keys.`);
         return;
       }
       const pid = sel.description as StoredProviderId;
       const input = await vscode.window.showInputBox({
-        title: `Contora: API key for ${sel.label}`,
+        title: `${PRODUCT_DISPLAY_NAME}: API key for ${sel.label}`,
         password: true,
         ignoreFocusOut: true,
         prompt: 'Key is stored with vscode.SecretStorage (never in settings.json).',
@@ -83,7 +83,7 @@ export function registerPhase3AiRuntime(
       }
       await keys.setKey(pid, input.trim());
       await vscode.window.showInformationMessage(
-        `Contora: Saved ${sel.label} key. Set "contora.aiProvider" to "${pid}" to use it.`,
+        `${PRODUCT_DISPLAY_NAME}: Saved ${sel.label} key. Set "contora.aiProvider" to "${pid}" to use it.`,
       );
     }),
   );
@@ -93,7 +93,7 @@ export function registerPhase3AiRuntime(
       const folder = deps.stateManager.getPrimaryFolder();
       const es = deps.getEventStore();
       if (!folder || !es) {
-        await vscode.window.showWarningMessage('Contora: Open a folder workspace first.');
+        await vscode.window.showWarningMessage(`${PRODUCT_DISPLAY_NAME}: Open a folder workspace first.`);
         return;
       }
       await deps.flushScanners();
@@ -115,10 +115,10 @@ export function registerPhase3AiRuntime(
       }
       try {
         const text = await runCloudSemanticSummary(snap.memory, snap.heuristicSemanticMarkdown, providers);
-        await openMarkdownPreview('Contora — Workspace observation (AI summary)', text);
+        await openMarkdownPreview(`${PRODUCT_DISPLAY_NAME} — Workspace observation (AI summary)`, text);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        await vscode.window.showErrorMessage(`Contora: ${msg}`);
+        await vscode.window.showErrorMessage(`${PRODUCT_DISPLAY_NAME}: ${msg}`);
       }
     }),
   );
@@ -128,7 +128,7 @@ export function registerPhase3AiRuntime(
       const folder = deps.stateManager.getPrimaryFolder();
       const es = deps.getEventStore();
       if (!folder || !es) {
-        await vscode.window.showWarningMessage('Contora: Open a folder workspace first.');
+        await vscode.window.showWarningMessage(`${PRODUCT_DISPLAY_NAME}: Open a folder workspace first.`);
         return;
       }
       await deps.flushScanners();
@@ -152,11 +152,11 @@ export function registerPhase3AiRuntime(
         const intent = await runWorkspaceIntentAnalysis(snap.memory, providers);
         const relatedFiles = (snap.memory.priorityFiles ?? []).map((p) => p.path);
         await writePersistedIntent(folder, intent, relatedFiles);
-        await openMarkdownPreview('Contora — Workspace intent snapshot (JSON)', JSON.stringify(intent, null, 2));
+        await openMarkdownPreview(`${PRODUCT_DISPLAY_NAME} — Workspace intent snapshot (JSON)`, JSON.stringify(intent, null, 2));
         await deps.refreshSidebar?.();
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        await vscode.window.showErrorMessage(`Contora: ${msg}`);
+        await vscode.window.showErrorMessage(`${PRODUCT_DISPLAY_NAME}: ${msg}`);
       }
     }),
   );
@@ -166,7 +166,7 @@ export function registerPhase3AiRuntime(
       const folder = deps.stateManager.getPrimaryFolder();
       const es = deps.getEventStore();
       if (!folder || !es) {
-        await vscode.window.showWarningMessage('Contora: Open a folder workspace first.');
+        await vscode.window.showWarningMessage(`${PRODUCT_DISPLAY_NAME}: Open a folder workspace first.`);
         return;
       }
       await deps.flushScanners();
@@ -197,10 +197,10 @@ export function registerPhase3AiRuntime(
           providers,
           useAi,
         );
-        await openMarkdownPreview('Contora — Tightened context preview', out);
+        await openMarkdownPreview(`${PRODUCT_DISPLAY_NAME} — Tightened context preview`, out);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        await vscode.window.showErrorMessage(`Contora: ${msg}`);
+        await vscode.window.showErrorMessage(`${PRODUCT_DISPLAY_NAME}: ${msg}`);
       }
     }),
   );

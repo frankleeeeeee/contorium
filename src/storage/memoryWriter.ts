@@ -5,7 +5,7 @@ import { CONTORA_DATA_DIR } from '../constants';
 const MEM = 'memory';
 
 /**
- * Write `.contora/memory/latest-memory.json` (Contora on-disk layout).
+ * Write `.Contorium/memory/latest-memory.json` (Contorium on-disk layout).
  */
 export async function writeLatestMemoryJson(workspaceRootFsPath: string, payload: unknown): Promise<string> {
   const dir = path.join(workspaceRootFsPath, CONTORA_DATA_DIR, MEM);

@@ -25,7 +25,7 @@ export function trimStringToTokenBudget(text: string, budget: number): string {
   }
   return (
     lines.slice(0, lo).join('\n') +
-    `\n\n<!-- Contora: trimmed to ~${budget} tokens (context budget) -->`
+    `\n\n<!-- Contorium: trimmed to ~${budget} tokens (context budget) -->`
   );
 }
 

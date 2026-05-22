@@ -1,5 +1,5 @@
 /**
- * Persisted to `.contora/state.json` (legacy: `.context-recall/state.json` is read on first load).
+ * Persisted to `.Contorium/state.json` (legacy: `.context-recall/state.json` is read on first load).
  */
 export interface ProjectState {
   /** Stable session id for Context Engine memory (generated once per workspace). */

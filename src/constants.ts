@@ -1,6 +1,10 @@
 /**
- * Contora — shared IDs and on-disk layout (VS Code extension).
+ * Contorium — shared IDs and on-disk layout (VS Code extension).
+ * Command/config IDs remain `contora.*`; user-visible name is {@link PRODUCT_DISPLAY_NAME}.
  */
+
+/** Marketplace / UI product name (internal IDs unchanged). */
+export const PRODUCT_DISPLAY_NAME = 'Contorium';
 
 /** Settings / commands namespace: `contora.*` */
 export const CONTORA_CONFIG_SECTION = 'contora';

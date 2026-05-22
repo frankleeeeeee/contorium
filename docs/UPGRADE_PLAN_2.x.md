@@ -1,4 +1,4 @@
-# Contora — Integrated upgrade plan (2.0 → 2.1 spec)
+# Contorium — Integrated upgrade plan (2.0 → 2.1 spec)
 
 This document merges the **four-layer architecture** from the v2.0 architecture notes with the **engineering specification** from the v2.1 notes (both are Markdown files at the repository root; filenames may use non-ASCII characters in older copies).  
 Relationship: **2.0** defines the conceptual modules and data flow; **2.1** refines types (immutable events, `EventStore.getLast`, `WorkspaceMemory.gitState` with staged vs working), **Context Builder** sections (`# TASK`, `# MODE`, …), and the **monorepo** packaging story.  
@@ -29,7 +29,7 @@ VS Code hooks
     → Export adapter → clipboard / JSON
 ```
 
-Persistent truth is **`.contora/state.json`** (legacy **`.context-recall/state.json`** is read if present); the event buffer is **session memory** for recent activity (bounded).
+Persistent truth is **`.Contorium/state.json`** (legacy **`.context-recall/state.json`** is read if present); the event buffer is **session memory** for recent activity (bounded).
 
 ---
 
@@ -43,4 +43,4 @@ Persistent truth is **`.contora/state.json`** (legacy **`.context-recall/state.j
 
 ## Version
 
-Implemented from extension **0.3.0** onward with `src/core/` module; settings namespace is **`contora.*`** (formerly `contextRecall.*`): e.g. `contora.defaultAIMode`, `contora.exportFormat`, `contora.maxEventBuffer`.
+Implemented from extension **0.3.0** onward with `src/core/` module; settings namespace is **`contorium.*`** (formerly `contextRecall.*`): e.g. `contorium.defaultAIMode`, `contorium.exportFormat`, `contorium.maxEventBuffer`.

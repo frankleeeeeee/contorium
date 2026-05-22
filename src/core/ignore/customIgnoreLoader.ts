@@ -10,7 +10,7 @@ function parseIgnoreLines(raw: string): string[] {
 }
 
 /**
- * Workspace-root ignore files: `.contoraignore` (primary) and legacy `.contextrecallignore`.
+ * Workspace-root ignore files: `.Contoriumignore` (primary) and legacy `.contextrecallignore`.
  * One path substring per line (same semantics as `extraIgnoreSubstrings`); `#` starts a comment.
  */
 export async function loadCustomIgnorePatterns(workspaceRootFsPath: string): Promise<string[]> {

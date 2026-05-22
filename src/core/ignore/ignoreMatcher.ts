@@ -41,7 +41,7 @@ export function shouldIgnoreWorkspacePath(
   return matchesUserIgnoreSubstrings(rel, userPatterns);
 }
 
-/** Combines default rules, settings substrings, and `.contoraignore` (plus legacy `.contextrecallignore`). */
+/** Combines default rules, settings substrings, and `.Contoriumignore` (plus legacy `.contextrecallignore`). */
 export class IgnoreMatcher {
   private filePatterns: string[] = [];
 

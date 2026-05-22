@@ -16,12 +16,12 @@ export class ProviderManager {
   async completeChat(turns: ChatTurn[]): Promise<string> {
     const s = readAiRuntimeSettings();
     if (s.aiProvider === 'off') {
-      throw new Error('AI provider is off (set contora.aiProvider and store an API key).');
+      throw new Error('AI provider is off (set contorium.aiProvider and store an API key).');
     }
     const keyId: StoredProviderId = s.aiProvider;
     const apiKey = await this.keys.getKey(keyId);
     if (!apiKey) {
-      throw new Error(`No API key stored for ${s.aiProvider}. Run "Contora: Configure API key…".`);
+      throw new Error(`No API key stored for ${s.aiProvider}. Run "Contorium: Configure API key…".`);
     }
     if (s.aiProvider === 'openai') {
       return completeOpenAI(s.openaiBaseUrl, apiKey, s.openaiModel, turns, s.aiMaxOutputTokens, 'OpenAI');

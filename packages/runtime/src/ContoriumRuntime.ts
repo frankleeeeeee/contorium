@@ -7,11 +7,11 @@ import type {
 } from './core/interfaces';
 
 /**
- * Default {@link RuntimeProvider} for Contora: intent stub, score-based ordering, bounded compression.
+ * Default {@link RuntimeProvider} for Contorium: intent stub, score-based ordering, bounded compression.
  */
-export class ContoraRuntime implements RuntimeProvider {
+export class ContoriumRuntime implements RuntimeProvider {
   buildIntent(_input: RuntimeInput): IntentResult {
-    return { type: 'contora-general', confidence: 0.62 };
+    return { type: 'contorium-general', confidence: 0.62 };
   }
 
   rankContext(context: ContextItem[]): ContextItem[] {

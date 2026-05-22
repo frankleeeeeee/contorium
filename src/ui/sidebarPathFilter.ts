@@ -1,5 +1,5 @@
 /**
- * Paths hidden from the Contora sidebar (Git / working set / recent focus).
+ * Paths hidden from the Contorium sidebar (Git / working set / recent focus).
  * Plugin data dirs and common build noise — not “user engineering” files.
  */
 
@@ -12,7 +12,7 @@ const JUNK_PATH_SEGMENTS = new Set(
   [
     'node_modules',
     '.git',
-    '.contora',
+    '.Contorium',
     '.context-recall',
     '.project-recall',
     'dist',

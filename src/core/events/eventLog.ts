@@ -42,7 +42,7 @@ export async function appendEventJsonl(
 }
 
 /**
- * Event log API: read session, tail stream, replay from JSONL on disk (Contora; legacy path fallback).
+ * Event log API: read session, tail stream, replay from JSONL on disk (Contorium; legacy path fallback).
  */
 export class EventLog {
   static async readSessionEvents(workspaceRootFsPath: string, sessionId: string): Promise<WorkspaceEvent[]> {

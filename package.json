@@ -1,7 +1,7 @@
 {
-  "name": "contora",
-  "displayName": "Contora",
-  "description": "Contora: local workspace memory (task, notes, editors, Git), event JSONL, heuristic intent/ranking, ignore rules, token budget, optional BYOK (OpenAI / Claude / Gemini / DeepSeek) — export AI-ready context to clipboard (markdown, JSON, etc.).",
+  "name": "contorium",
+  "displayName": "Contorium",
+  "description": "Contorium: local workspace memory (task, notes, editors, Git), event JSONL, heuristic intent/ranking, ignore rules, token budget, optional BYOK (OpenAI / Claude / Gemini / DeepSeek) — export AI-ready context to clipboard (markdown, JSON, etc.).",
   "version": "0.5.4",
   "license": "MIT",
   "repository": {
@@ -44,42 +44,42 @@
     "commands": [
       {
         "command": "contora.exportAIContext",
-        "title": "Contora: Copy AI-ready context (clipboard)"
+        "title": "Contorium: Copy AI-ready context (clipboard)"
       },
       {
         "command": "contora.saveStateNow",
-        "title": "Contora: Save session state now"
+        "title": "Contorium: Save session state now"
       },
       {
         "command": "contora.restoreSession",
-        "title": "Contora: Restore editors from saved state"
+        "title": "Contorium: Restore editors from saved state"
       },
       {
         "command": "contora.configureApiKey",
-        "title": "Contora: Configure API key… (BYOK)"
+        "title": "Contorium: Configure API key… (BYOK)"
       },
       {
         "command": "contora.generateSemanticSummary",
-        "title": "Contora: Observe workspace (AI summary)"
+        "title": "Contorium: Observe workspace (AI summary)"
       },
       {
         "command": "contora.analyzeWorkspaceIntent",
-        "title": "Contora: Learn workspace intent (AI)"
+        "title": "Contorium: Learn workspace intent (AI)"
       },
       {
         "command": "contora.compressContextPreview",
-        "title": "Contora: Tighten context preview (AI)"
+        "title": "Contorium: Tighten context preview (AI)"
       },
       {
         "command": "contora.startFreshAiSession",
-        "title": "Contora: Start fresh AI context session (clear session events)"
+        "title": "Contorium: Start fresh AI context session (clear session events)"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "contora",
-          "title": "Contora",
+          "title": "Contorium",
           "icon": "icon.png"
         }
       ]
@@ -89,12 +89,12 @@
         {
           "type": "webview",
           "id": "contora.sidebar",
-          "name": "Contora"
+          "name": "Contorium"
         }
       ]
     },
     "configuration": {
-      "title": "Contora",
+      "title": "Contorium",
       "properties": {
         "contora.maxRestoreEditors": {
           "type": "number",
@@ -153,7 +153,7 @@
           "default": 800,
           "minimum": 0,
           "maximum": 200000,
-          "description": "Approximate max tokens for “Copy AI-ready context”. Default 800. Contora compresses locally toward ~500 first, allows up to ~800 without a model; if the export is still over ~800 tokens and exportLlmFallbackWhenOverBudget is on, one BYOK pass may tighten it. Set 0 for unlimited (expert). Any positive value is honored (no minimum clamp)."
+          "description": "Approximate max tokens for “Copy AI-ready context”. Default 800. Contorium compresses locally toward ~500 first, allows up to ~800 without a model; if the export is still over ~800 tokens and exportLlmFallbackWhenOverBudget is on, one BYOK pass may tighten it. Set 0 for unlimited (expert). Any positive value is honored (no minimum clamp)."
         },
         "contora.exportLlmFallbackWhenOverBudget": {
           "type": "boolean",
@@ -185,7 +185,7 @@
           "type": "string",
           "enum": ["off", "openai", "anthropic", "google", "deepseek"],
           "default": "off",
-          "description": "Phase 3 BYOK: which LLM provider to use for on-demand semantic summary / intent / compression. Keys via \"Contora: Configure API key…\" (SecretStorage only)."
+          "description": "Phase 3 BYOK: which LLM provider to use for on-demand semantic summary / intent / compression. Keys via \"Contorium: Configure API key…\" (SecretStorage only)."
         },
         "contora.openaiModel": {
           "type": "string",

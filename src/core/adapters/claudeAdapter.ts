@@ -2,8 +2,8 @@ import { normalizeExportMarkdown } from './markdownAdapter';
 
 const LEGACY_BEGIN = '<<<CONTEXTRECALL>>>';
 const LEGACY_END = '<<<END_CONTEXTRECALL>>>';
-const ALT_BEGIN = '<<<CONTORA_BLOCK_V2>>>';
-const ALT_END = '<<<END_CONTORA_BLOCK_V2>>>';
+const ALT_BEGIN = '<<<CONTORIUM_BLOCK_V2>>>';
+const ALT_END = '<<<END_CONTORIUM_BLOCK_V2>>>';
 
 /**
  * Claude-friendly framing: clear delimiter + same body as markdown export.
@@ -18,7 +18,7 @@ export function adaptClaude(promptText: string): string {
     body.includes(ALT_BEGIN);
   const [begin, end] = fenceCollision ? [ALT_BEGIN, ALT_END] : [LEGACY_BEGIN, LEGACY_END];
   return [
-    'The following is structured workspace context from Contora (VS Code extension).',
+    'The following is structured workspace context from Contorium (VS Code extension).',
     'Use it as ground truth for paths and recent activity; verify code in the repo before claiming behavior.',
     '',
     begin,

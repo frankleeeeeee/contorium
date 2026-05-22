@@ -25,7 +25,12 @@ import { StateManager, newSessionId } from './state/stateManager';
 import { detectWorkspaceSessionShift, topWorkspacePathsFromState } from './state/sessionBoundary';
 import { restoreEditorsFromState } from './state/recovery';
 import { writeLatestMemoryJson } from './storage/memoryWriter';
-import { CONTORA_CONFIG_SECTION, CONTORA_IGNORE_FILE, CONTORA_LEGACY_IGNORE_FILE } from './constants';
+import {
+  CONTORA_CONFIG_SECTION,
+  CONTORA_IGNORE_FILE,
+  CONTORA_LEGACY_IGNORE_FILE,
+  PRODUCT_DISPLAY_NAME,
+} from './constants';
 import { ContoraSidebarProvider } from './ui/sidebarProvider';
 import { ContoraKeyManager } from './ai/auth/keyManager';
 import { buildAiReadyJsonExport, buildAiReadyMarkdownExport } from './ai/buildAiReadyExport';
@@ -371,7 +376,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const runExport = async () => {
     const folder = stateManager.getPrimaryFolder();
     if (!folder) {
-      await vscode.window.showWarningMessage('Contora: Open a folder workspace first.');
+      await vscode.window.showWarningMessage(`${PRODUCT_DISPLAY_NAME}: Open a folder workspace first.`);
       return;
     }
     if (!workspaceIgnoreMatcher) {
@@ -467,7 +472,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               ? 'OpenAI messages'
               : 'Markdown';
     const note = budget > 0 && tok >= budget * 0.98 ? ' (near export token budget)' : '';
-    let msg = `Contora: Copied AI-ready context (${fmtLabel}, ~${tok} tokens)${note}`;
+    let msg = `${PRODUCT_DISPLAY_NAME}: Copied AI-ready context (${fmtLabel}, ~${tok} tokens)${note}`;
     if (!taskTrim) {
       msg += ' — AI continuity works better with a focus goal.';
     }
@@ -479,7 +484,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const runStartFreshAiSession = async (): Promise<void> => {
     const folder = stateManager.getPrimaryFolder();
     if (!folder) {
-      await vscode.window.showWarningMessage('Contora: Open a folder workspace first.');
+      await vscode.window.showWarningMessage(`${PRODUCT_DISPLAY_NAME}: Open a folder workspace first.`);
       return;
     }
     const es = globalEventStore;
@@ -507,7 +512,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     };
     void sidebar.refresh();
     await vscode.window.showInformationMessage(
-      'Contora: Fresh AI context session started. Session activity was cleared; workspace files and Git are unchanged.',
+      `${PRODUCT_DISPLAY_NAME}: Fresh AI context session started. Session activity was cleared; workspace files and Git are unchanged.`,
     );
   };
 
@@ -542,7 +547,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand('contora.saveStateNow', async () => {
       const folder = stateManager.getPrimaryFolder();
       if (!folder) {
-        await vscode.window.showWarningMessage('Contora: Open a folder workspace first.');
+        await vscode.window.showWarningMessage(`${PRODUCT_DISPLAY_NAME}: Open a folder workspace first.`);
         return;
       }
       if (!workspaceIgnoreMatcher) {
@@ -621,7 +626,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
       }
       await sidebar.refresh();
-      await vscode.window.showInformationMessage('Contora: State saved to .contora/state.json.');
+      await vscode.window.showInformationMessage(`${PRODUCT_DISPLAY_NAME}: State saved to .contora/state.json.`);
     }),
   );
 
@@ -629,12 +634,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand('contora.restoreSession', async () => {
       const folder = stateManager.getPrimaryFolder();
       if (!folder) {
-        await vscode.window.showWarningMessage('Contora: Open a folder workspace first.');
+        await vscode.window.showWarningMessage(`${PRODUCT_DISPLAY_NAME}: Open a folder workspace first.`);
         return;
       }
       const st = await stateManager.load(folder);
       await restoreEditorsFromState(folder, st);
-      await vscode.window.showInformationMessage('Contora: Opened editors from saved state.');
+      await vscode.window.showInformationMessage(`${PRODUCT_DISPLAY_NAME}: Opened editors from saved state.`);
     }),
   );
 

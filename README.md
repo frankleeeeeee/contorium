@@ -1,19 +1,19 @@
-# Contora
+# Contorium
 
-![Contora: restore workspace context for AI](demo.gif)
+![Contorium: restore workspace context for AI](demo.gif)
 
 # Persistent Memory Layer for AI Coding
 
-Contora gives AI a continuous understanding of your workspace, goals, Git changes, and coding sessions.
+Contorium gives AI a continuous understanding of your workspace, goals, Git changes, and coding sessions.
 
 Instead of losing context every chat, model switch, IDE restart, or session recovery,  
-Contora continuously maintains a structured workspace memory for AI.
+Contorium continuously maintains a structured workspace memory for AI.
 
 Built for developers who work with AI every day.
 
 ---
 
-# Why Contora?
+# Why Contorium?
 
 Most AI coding tools forget everything.
 
@@ -31,7 +31,7 @@ You switch:
 - project intent
 - active debugging context
 
-Contora fixes that.
+Contorium fixes that.
 
 It continuously tracks your active workspace and turns it into a persistent AI memory layer.
 
@@ -39,15 +39,15 @@ So your AI can continue where you left off.
 
 ---
 
-# What Makes Contora Different?
+# What Makes Contorium Different?
 
-Contora is not another AI chat panel.
+Contorium is not another AI chat panel.
 
 It is a:
 
 # Workspace-aware AI Memory System
 
-Contora continuously maintains:
+Contorium continuously maintains:
 - current focus
 - active files
 - recent edits
@@ -80,7 +80,7 @@ Your AI still understands:
 
 ## Keep AI aware across large codebases
 
-Contora continuously tracks:
+Contorium continuously tracks:
 - working-set files
 - recent activity
 - Git changes
@@ -112,7 +112,7 @@ without rebuilding workspace memory every time.
 
 Large projects can quickly explode token costs.
 
-Contora reduces unnecessary AI context by:
+Contorium reduces unnecessary AI context by:
 - tracking only active workspace changes
 - prioritizing important files
 - compressing recent activity
@@ -120,7 +120,7 @@ Contora reduces unnecessary AI context by:
 - generating compact structured memory
 
 Instead of sending your entire repository every session,
-Contora helps AI focus on what actually matters.
+Contorium helps AI focus on what actually matters.
 
 Especially useful for:
 - long AI coding sessions
@@ -162,7 +162,7 @@ Stored locally inside:
 
 Set your current focus manually.
 
-Contora continuously updates surrounding workspace context automatically.
+Contorium continuously updates surrounding workspace context automatically.
 
 Example:
 
@@ -180,7 +180,7 @@ AI inferred goals:
 
 ## Git-aware Context
 
-Contora automatically tracks:
+Contorium automatically tracks:
 - staged files
 - modified files
 - working-tree changes
@@ -193,7 +193,7 @@ and prioritizes them in AI context generation.
 
 Large codebases generate noisy AI context.
 
-Contora compresses workspace activity into:
+Contorium compresses workspace activity into:
 - semantic summaries
 - ranked priority files
 - compact event history
@@ -231,7 +231,7 @@ Your AI coding session becomes persistent.
 
 ## Local-first Architecture
 
-Contora is designed to work locally first.
+Contorium is designed to work locally first.
 
 - No cloud sync
 - No chat log scraping
@@ -282,7 +282,7 @@ Export / Restore / AI Workflows
 
 ## 1. Open your project
 
-Contora begins tracking:
+Contorium begins tracking:
 - active files
 - recent edits
 - Git changes
@@ -302,7 +302,7 @@ Refactor payment retry system
 
 ## 3. Work normally
 
-Contora continuously builds:
+Contorium continuously builds:
 - workspace memory
 - ranked file priority
 - semantic summaries
@@ -315,7 +315,7 @@ Contora continuously builds:
 
 One click.
 
-Contora generates:
+Contorium generates:
 - structured memory
 - compressed workspace context
 - AI-ready summaries
@@ -392,7 +392,7 @@ Reduce unnecessary token usage when using:
 
 # Sidebar Overview
 
-The Contora sidebar includes:
+The Contorium sidebar includes:
 
 ## AI Status
 - current focus
@@ -518,7 +518,7 @@ src/
 
 AI coding tools should not lose context every session.
 
-Contora is building:
+Contorium is building:
 
 # Persistent Workspace Memory for AI
 
