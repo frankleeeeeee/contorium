@@ -1,0 +1,23 @@
+{
+  "name": "contorium",
+  "version": "0.5.4",
+  "description": "Local workspace memory for AI coding: current focus, Git and editor state, session events, heuristic intent, and MCP tools for agent recall.",
+  "author": {
+    "name": "franklee-dev"
+  },
+  "homepage": "https://github.com/frankleeeeeee/contora#readme",
+  "repository": "https://github.com/frankleeeeeee/contora",
+  "license": "MIT",
+  "keywords": [
+    "workspace",
+    "context",
+    "memory",
+    "session",
+    "git",
+    "ai",
+    "productivity"
+  ],
+  "commands": "./commands/",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

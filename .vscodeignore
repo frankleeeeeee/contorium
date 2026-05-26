@@ -14,11 +14,18 @@ scripts/**
 
 # Cursor Marketplace plugin bundle (Git repo submission — not VS Code runtime).
 .cursor-plugin/**
+.claude-plugin/**
 assets/**
 commands/**
 skills/**
 rules/**
 schemas/**
+
+# MCP server package (Claude Code — not part of VS Code extension runtime).
+packages/mcp/**
+mcp.json
+.mcp.json
+docs/MCP.md
 
 # Do not ship TypeScript compiler or type packages inside the VSIX (runtime never needs them).
 node_modules/typescript/**

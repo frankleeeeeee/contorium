@@ -28,7 +28,14 @@ description: Use Contorium workspace memory layers (focus, session events, Git, 
 4. When AI intent is stale (low confidence), rely on heuristic operational intent from recent edits.
 5. Respect ignore rules (`.contoraignore`, `contora.extraIgnoreSubstrings`) when reasoning about ranked files.
 
-## Extension commands (unchanged IDs)
+## MCP tools (Claude Code / Cursor Agent)
+
+When the Contorium MCP server is connected (`npm run build:mcp`, see `docs/MCP.md`):
+
+- `get_workspace_context` — read extension snapshot from `.contora/state.json`
+- `store_memory` / `search_memory` / `get_memory` — agent-persisted notes under `.contora/mcp/memories.json`
+
+Use MCP for agent-driven recall; use extension commands for sidebar UI and clipboard export.
 
 - `contora.exportAIContext` — copy AI-ready context
 - `contora.startFreshAiSession` — reset session activity + intent pool

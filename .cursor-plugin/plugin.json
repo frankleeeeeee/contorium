@@ -28,5 +28,6 @@
   ],
   "commands": "./commands/",
   "skills": "./skills/",
-  "rules": "./rules/"
+  "rules": "./rules/",
+  "mcpServers": "./mcp.json"
 }

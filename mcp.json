@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "contorium": {
+      "command": "node",
+      "args": ["${workspaceFolder}/packages/mcp/dist/server.js"],
+      "env": {
+        "CONTORIUM_WORKSPACE": "${workspaceFolder}"
+      }
+    }
+  }
+}

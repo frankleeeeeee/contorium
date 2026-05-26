@@ -123,6 +123,53 @@ async function validateFrontmatterFile(filePath, componentName, requiredKeys, pl
   }
 }
 
+function extractMcpServers(config) {
+  if (!config || typeof config !== 'object') {
+    return null;
+  }
+  if (config.mcpServers && typeof config.mcpServers === 'object') {
+    return config.mcpServers;
+  }
+  const flat = {};
+  for (const [name, entry] of Object.entries(config)) {
+    if (entry && typeof entry === 'object' && ('command' in entry || 'url' in entry || 'type' in entry)) {
+      flat[name] = entry;
+    }
+  }
+  return Object.keys(flat).length ? flat : null;
+}
+
+async function validateMcpJson(filePath, pluginName, formatHint) {
+  const config = await readJsonFile(filePath, `${formatHint} MCP config`);
+  if (!config) {
+    return;
+  }
+  const servers = extractMcpServers(config);
+  if (!servers) {
+    addError(`${pluginName}: ${path.basename(filePath)} must define MCP servers (flat or mcpServers wrapper)`);
+    return;
+  }
+  for (const [name, entry] of Object.entries(servers)) {
+    if (!entry || typeof entry !== 'object') {
+      addError(`${pluginName}: MCP server "${name}" must be an object`);
+      continue;
+    }
+    const isHttpLike = entry.type === 'http' || entry.type === 'sse' || entry.type === 'ws' || entry.url;
+    if (isHttpLike) {
+      if (typeof entry.url !== 'string' || !entry.url.length) {
+        addError(`${pluginName}: MCP server "${name}" must include a non-empty "url"`);
+      }
+      continue;
+    }
+    if (typeof entry.command !== 'string' || !entry.command.length) {
+      addError(`${pluginName}: MCP server "${name}" must include a non-empty "command"`);
+    }
+    if (entry.args !== undefined && !Array.isArray(entry.args)) {
+      addError(`${pluginName}: MCP server "${name}" args must be an array when present`);
+    }
+  }
+}
+
 async function validateComponents(pluginName) {
   const rulesDir = path.join(pluginDir, 'rules');
   if (await pathExists(rulesDir)) {
@@ -154,30 +201,59 @@ async function validateComponents(pluginName) {
   }
 }
 
-async function main() {
-  const manifestPath = path.join(pluginDir, '.cursor-plugin', 'plugin.json');
-  const manifest = await readJsonFile(manifestPath, 'Plugin manifest');
+async function validateManifest(manifestPath, platformLabel, pathFields) {
+  const manifest = await readJsonFile(manifestPath, `${platformLabel} manifest`);
   if (!manifest) {
-    summarize();
-    return;
+    return null;
   }
 
+  const pluginName = manifest.name ?? platformLabel;
   if (typeof manifest.name !== 'string' || !pluginNamePattern.test(manifest.name)) {
-    addError('plugin.json "name" must be lowercase kebab-case.');
+    addError(`${platformLabel}: plugin.json "name" must be lowercase kebab-case.`);
   }
 
-  for (const field of ['logo', 'rules', 'skills', 'commands']) {
+  for (const field of pathFields) {
     const value = manifest[field];
     if (typeof value === 'string') {
       const normalized = value.replace(/^\.\//, '').replace(/\/$/, '');
-      await validateReferencedPath(field, normalized, manifest.name ?? 'plugin');
+      await validateReferencedPath(field, normalized, pluginName);
+      if (field === 'mcpServers' && normalized.endsWith('.json')) {
+        await validateMcpJson(path.resolve(pluginDir, normalized), pluginName, platformLabel);
+      }
     }
   }
 
-  await validateComponents(manifest.name ?? 'plugin');
+  return pluginName;
+}
+
+async function main() {
+  const cursorManifest = path.join(pluginDir, '.cursor-plugin', 'plugin.json');
+  const claudeManifest = path.join(pluginDir, '.claude-plugin', 'plugin.json');
+
+  const cursorName = await validateManifest(cursorManifest, 'Cursor', [
+    'logo',
+    'rules',
+    'skills',
+    'commands',
+    'mcpServers',
+  ]);
+  const claudeName = await validateManifest(claudeManifest, 'Claude Code', ['skills', 'commands', 'mcpServers']);
+
+  if (!(await pathExists(claudeManifest))) {
+    addError('Claude Code manifest missing: .claude-plugin/plugin.json');
+  } else if (!(await pathExists(path.join(pluginDir, '.mcp.json')))) {
+    addWarning('Claude Code expects .mcp.json at repo root when mcpServers is configured.');
+  }
+
+  const componentName = cursorName ?? claudeName ?? 'plugin';
+  await validateComponents(componentName);
 
   if (!(await pathExists(path.join(pluginDir, 'package.json')))) {
     addWarning('No package.json at repo root (VS Code extension host). Required for sidebar build.');
+  }
+
+  if (!(await pathExists(path.join(pluginDir, 'packages', 'mcp', 'dist', 'server.js')))) {
+    addWarning('packages/mcp/dist/server.js missing — run npm run build:mcp before MCP use.');
   }
 
   summarize();
@@ -198,7 +274,7 @@ function summarize() {
     }
     process.exit(1);
   }
-  console.log('Cursor plugin validation passed.');
+  console.log('Plugin validation passed (Cursor + Claude Code manifests).');
 }
 
 await main();

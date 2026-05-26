@@ -251,7 +251,8 @@
     "vsix": "node scripts/package-vsix.cjs",
     "validate:plugin": "node scripts/validate-plugin.mjs",
     "build:runtime": "npm --prefix packages/runtime run build",
-    "compile": "npm run build:runtime && tsc -p ./",
+    "build:mcp": "npm --prefix packages/mcp run build",
+    "compile": "npm run build:runtime && npm run build:mcp && tsc -p ./",
     "watch": "tsc -watch -p ./"
   },
   "devDependencies": {

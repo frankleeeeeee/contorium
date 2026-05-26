@@ -1,0 +1,9 @@
+{
+  "contorium": {
+    "command": "node",
+    "args": ["${CLAUDE_PLUGIN_ROOT}/packages/mcp/dist/server.js"],
+    "env": {
+      "CONTORIUM_WORKSPACE": "${CLAUDE_PROJECT_DIR}"
+    }
+  }
+}

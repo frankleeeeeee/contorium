@@ -27,6 +27,9 @@ contorium/
 ├── package.json                   # VS Code extension manifest (sidebar UI)
 ├── src/                           # Extension TypeScript source
 ├── packages/runtime/              # Bundled @contora/runtime
+├── packages/mcp/                # MCP server (Claude Code + Cursor Agent)
+│   └── dist/server.js           # stdio entry (build with npm run build:mcp)
+├── mcp.json                     # Cursor MCP wiring for Marketplace plugin
 └── scripts/
     ├── validate-plugin.mjs        # Cursor plugin checklist
     └── package-vsix.cjs           # VSIX build (Open VSX / VS Code)
@@ -34,6 +37,7 @@ contorium/
 
 - **Cursor Marketplace**: submit this Git repository ([publish guide](https://cursor.com/marketplace/publish)). Run `npm run validate:plugin` before submission.
 - **VS Code / Cursor IDE extension**: build with `npm run vsix` and install the `.vsix` for the sidebar, scanners, and clipboard export.
+- **Claude Code / MCP**: build with `npm run build:mcp`, then see [docs/MCP.md](docs/MCP.md) for `claude mcp add` and Cursor `mcp.json` setup.
 
 Internal command and config IDs remain `contora.*`; display name is **Contorium**.
 
