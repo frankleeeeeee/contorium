@@ -13,11 +13,15 @@ stdio MCP server exposing Contorium memory tools. Works alongside the **VS Code 
 
 ## Build
 
+From the repository root (installs `packages/mcp` deps automatically):
+
 ```bash
 npm run build:mcp
 # or
 npm run compile
 ```
+
+First-time only, you can also run `npm run install:mcp` explicitly.
 
 Entry: `packages/mcp/dist/server.js`  
 CLI bin (after `npm install` in `packages/mcp`): `contorium-mcp`
