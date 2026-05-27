@@ -1,6 +1,6 @@
 {
   "name": "@contorium/mcp",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "description": "Contorium MCP server for Claude Code and Cursor (stdio tools over workspace memory).",
   "type": "module",
   "license": "MIT",
