@@ -6,11 +6,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/frankleeeeeee/contorium.git"
+    "url": "https://github.com/ContoriumLabs/contorium.git"
   },
-  "homepage": "https://github.com/frankleeeeeee/contorium#readme",
+  "homepage": "https://github.com/ContoriumLabs/contorium#readme",
   "bugs": {
-    "url": "https://github.com/frankleeeeeee/contorium/issues"
+    "url": "https://github.com/ContoriumLabs/contorium/issues"
   },
   "publisher": "franklee-dev",
   "icon": "icon.png",

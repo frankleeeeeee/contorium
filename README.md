@@ -116,7 +116,7 @@ Install from VSIX inside:
 ## From source
 
 ```bash
-git clone https://github.com/frankleeeeeee/contorium
+git clone https://github.com/ContoriumLabs/contorium
 cd contorium
 npm install
 npm run compile
