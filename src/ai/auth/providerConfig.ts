@@ -16,9 +16,11 @@ export interface AiRuntimeSettings {
 
 export function readAiRuntimeSettings(): AiRuntimeSettings {
   const cfg = vscode.workspace.getConfiguration(CONTORA_CONFIG_SECTION);
-  const raw = (cfg.get<string>('aiProvider') ?? 'off').toLowerCase();
+  const raw = (cfg.get<string>('aiProvider') ?? 'deepseek').toLowerCase();
   const aiProvider: AiProviderSetting =
-    raw === 'openai' || raw === 'anthropic' || raw === 'google' || raw === 'deepseek' ? raw : 'off';
+    raw === 'off' || raw === 'openai' || raw === 'anthropic' || raw === 'google' || raw === 'deepseek'
+      ? raw
+      : 'deepseek';
   return {
     aiProvider,
     openaiModel: cfg.get<string>('openaiModel') ?? 'gpt-4o-mini',

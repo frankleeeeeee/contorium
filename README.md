@@ -59,6 +59,22 @@ npm version patch   # 0.5.5 → 0.5.6
 
 `npm run compile` / `npm run vsix` also run `version:sync` first.
 
+### Release / packaging (clean install)
+
+Online installs (VSIX or Git clone) must **not** include developer workspace data. Before `npm run vsix` or `git push`:
+
+- **Do not commit** `.contora/` (focus, notes, session JSONL) — gitignored; created per user project at runtime.
+- **Do not commit** `.vscode/settings.json` — copy from [`.vscode/settings.example.json`](.vscode/settings.example.json) locally if needed.
+- **Do not commit** `*.vsix` — gitignored.
+- API keys stay in VS Code **SecretStorage** only (never in the repo).
+
+Fresh install behavior: empty **Current focus**, no session events, default LLM settings from extension manifest (`contora.aiProvider`: `deepseek` until the user changes settings and adds a key).
+
+```bash
+git status   # confirm no .contora/ or *.vsix staged
+npm run vsix
+```
+
 ---
 
 # Why Contorium?

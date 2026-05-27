@@ -1,7 +1,7 @@
 {
   "name": "contorium",
   "displayName": "Contorium",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "Local workspace memory for AI coding: current focus, Git and editor state, session events, heuristic intent, and one-click AI-ready context export.",
   "publisher": "franklee-dev",
   "author": {

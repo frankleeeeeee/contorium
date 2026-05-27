@@ -2,7 +2,7 @@
   "name": "contorium",
   "displayName": "Contorium",
   "description": "Contorium: local workspace memory (task, notes, editors, Git), event JSONL, heuristic intent/ranking, ignore rules, token budget, optional BYOK (OpenAI / Claude / Gemini / DeepSeek) — export AI-ready context to clipboard (markdown, JSON, etc.).",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -184,7 +184,7 @@
         "contora.aiProvider": {
           "type": "string",
           "enum": ["off", "openai", "anthropic", "google", "deepseek"],
-          "default": "off",
+          "default": "deepseek",
           "description": "Phase 3 BYOK: which LLM provider to use for on-demand semantic summary / intent / compression. Keys via \"Contorium: Configure API key…\" (SecretStorage only)."
         },
         "contora.openaiModel": {

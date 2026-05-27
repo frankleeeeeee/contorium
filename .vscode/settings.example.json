@@ -1,0 +1,10 @@
+{
+  "contora.aiProvider": "deepseek",
+  "contora.deepseekModel": "deepseek-chat",
+  "contora.deepseekBaseUrl": "https://api.deepseek.com/v1",
+  "contora.defaultAIMode": "feature",
+  "contora.exportFormat": "markdown",
+  "contora.exportTokenBudget": 800,
+  "contora.exportLlmFallbackWhenOverBudget": true,
+  "contora.appendAiSummaryOnExport": false
+}

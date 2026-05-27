@@ -3,3 +3,14 @@ node_modules
 packages/mcp/node_modules
 .vscode-test
 *.vsix
+
+# Local workspace memory (created at runtime per project — never ship or commit).
+.contora/
+.context-recall/
+
+# Developer workspace overrides (copy from settings.example.json if needed).
+.vscode/settings.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
