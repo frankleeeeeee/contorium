@@ -1,6 +1,6 @@
 {
   "name": "contorium",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "description": "Local workspace memory for AI coding: current focus, Git and editor state, session events, heuristic intent, and MCP tools for agent recall.",
   "author": {
     "name": "franklee-dev"
