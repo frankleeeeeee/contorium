@@ -1,278 +1,224 @@
-# Contorium
+Contorium
 
-![Contorium: restore workspace context automatically for AI coding](demo.gif)
+Runtime continuity layer for AI coding agents.
 
-Runtime memory infrastructure for AI coding agents.
+AI coding tools reset context constantly.
 
-AI coding tools lose runtime state constantly.
+Contorium maintains continuous workspace state across sessions, tools, and models.
 
-They forget:
+It keeps AI coding agents aligned with:
 
-* what you’re building
-* what changed
-* current architectural focus
-* active debugging progress
-* recent decisions
-* workspace continuity
+* current focus
+* workspace state
+* active files
+* git activity
+* session continuity
 
-Contorium gives coding agents persistent runtime context across long development workflows.
-
-Built for:
+across:
 
 * Cursor
 * VS Code
 * Claude Code
 * Codex
-* MCP-based AI systems
+* MCP-compatible agents
 
 ⸻
 
+What is Contorium?
+
+Contorium defines the runtime continuity layer for AI coding agents.
+
+Not a memory tool.
+Not a context retrieval system.
+
+A persistent runtime state layer between AI agents and your workspace.
+
 ⸻
 
-The Problem
+Why?
 
-Modern AI coding assistants are stateless.
+AI coding tools lose workspace state between sessions.
 
-Every new session forces the model to reconstruct:
+Every restart forces developers to:
 
-* project intent
-* architecture decisions
-* debugging progress
+* re-explain project goals
+* rebuild architectural context
+* recover debugging progress
+* restore active workspace state
+
+Contorium prevents that.
+
+⸻
+
+Core Runtime Capabilities
+
+Current Focus
+
+Continuously maintains what you’re actively building.
+
+AI agents stay aligned with your current intent across sessions and tools.
+
+⸻
+
+Workspace State
+
+Tracks the real-time state of your workspace:
+
 * active files
-* current focus
-* workspace history
-
-Even with large context windows, AI agents still suffer from:
-
-* context drift
-* architectural forgetting
-* repeated reasoning
-* token inefficiency
-* session fragmentation
-
-Most “AI memory” systems only retrieve old text.
-
-Contorium focuses on something different:
-
-Runtime Continuity
-
-Not just storing information.
-
-Maintaining the active working state of an AI-assisted development session.
-
-⸻
-
-What Contorium Does
-
-Contorium continuously tracks workspace runtime state:
-
-* active files
-* coding focus
-* Git activity
-* recent edits
-* workspace structure
-* architectural decisions
-* debugging progress
-* session continuity
-
-So your AI can continue working instead of restarting context every session.
-
-⸻
-
-Core Features
-
-Runtime Workspace Memory
-
-Contorium maintains a persistent runtime layer for your workspace.
-
-Instead of storing endless chat history, it tracks:
-
-* current development focus
-* active modules
-* recent architectural changes
-* ongoing debugging tasks
-* workspace evolution over time
-
-Stored locally inside:
-
-.contora/
+* git changes
+* recent activity
+* working set evolution
 
 ⸻
 
 Session Continuity
 
-Close Cursor.
+Maintains workspace continuity across:
 
-Switch models.
+* IDE restarts
+* model switches
+* long coding sessions
+* multi-agent workflows
 
-Restart your IDE.
-
-Come back tomorrow.
-
-Your AI still understands:
-
-* what changed
-* what mattered
-* what you were actively working on
-* where the project currently stands
+No context reset. No repeated explanations.
 
 ⸻
 
-Git-aware Runtime Tracking
+Quick Install
 
-Automatically tracks:
+VS Code / Cursor
 
-* modified files
-* staged changes
-* recent commits
-* working tree activity
-* active development areas
+Install from VSIX
 
-This allows AI agents to understand project evolution instead of isolated snapshots.
-
-⸻
-
-Token-efficient Context Compression
-
-Contorium reduces unnecessary context usage by:
-
-* ranking important workspace activity
-* compressing historical runtime state
-* filtering noisy files
-* prioritizing active development areas
-* tracking focus over time
-
-Especially useful for:
-
-* monorepos
-* long-running agent workflows
-* frontier reasoning models
-* multi-session AI development
+1. Download the latest .vsix
+2. Open Extensions
+3. Click:
+    * ...
+    * Install from VSIX
+4. Select the downloaded file
 
 ⸻
 
-Local-first Architecture
+From Source
 
-Your runtime memory stays local.
-
-* no cloud sync
-* no hidden telemetry
-* no remote workspace scraping
-* optional BYOK support
-
-Contorium is designed for developer-controlled memory infrastructure.
-
-⸻
-
-Why Runtime Memory Matters
-
-Most AI memory systems work like search engines.
-
-They retrieve old information.
-
-But software development is not retrieval.
-
-It is an evolving runtime workflow.
-
-AI agents need:
-
-* continuity
-* focus awareness
-* workspace state
-* architectural persistence
-* lifecycle tracking
-
-Contorium is built around runtime continuity instead of static memory retrieval.
-
-⸻
-
-Installation
-
-Requirements
-
-* Open a **folder workspace** (not a single file).
-* Workspace data is stored under `.contora/` in the project root (local only; not committed).
-
-VSIX (Cursor / VS Code)
-
-Supported editors: Cursor, VS Code, Windsurf, VSCodium.
-
-1. Build a package (from source): `npm run vsix` → produces `contorium-*.vsix` in the repo root.
-2. Extensions → `...` → **Install from VSIX…** → select the `.vsix` file.
-3. Reload the window.
-4. Open the **Contorium** view from the activity bar.
-
-Common commands (Command Palette):
-
-| Command | Purpose |
-|---------|---------|
-| **Contorium: Copy AI-ready context (clipboard)** | Copy structured workspace memory for a new chat |
-| **Contorium: Configure API key… (BYOK)** | Save provider key in SecretStorage (never in settings) |
-| **Contorium: Start fresh AI context session** | Clear session events / intent pool; files and Git unchanged |
-| **Contorium: Save session state now** | Persist `.contora/state.json` |
-| **Contorium: Learn workspace intent (AI)** | BYOK workspace intent snapshot |
-| **Contorium: Observe workspace (AI summary)** | BYOK semantic summary |
-| **Contorium: Restore editors from saved state** | Reopen editors from last saved state |
-
-Optional LLM (BYOK): set `contora.aiProvider` in Settings (default in extension: `deepseek`). Run **Configure API key…** for your vendor. Optional workspace template: copy [`.vscode/settings.example.json`](.vscode/settings.example.json) to `.vscode/settings.json` (do not commit API keys).
-
-Cursor Marketplace: submit this Git repository; run `npm run validate:plugin` before publishing ([`.cursor-plugin/plugin.json`](.cursor-plugin/plugin.json)).
-
-⸻
-
-From Source (developers)
-
-```bash
 git clone https://github.com/ContoriumLabs/contorium.git
 cd contorium
 npm install
-npm run compile    # version sync + runtime + MCP + extension
-npm run vsix       # optional: build contorium-*.vsix
-```
+npm run compile
 
 ⸻
 
-MCP + agent plugins (Codex / Claude Code / Cursor Agent)
+Quick Usage
 
-Build MCP first: `npm run build:mcp` (also runs as part of `npm run compile`).
+1. Set Current Focus
 
-| Platform | Plugin manifest | MCP config |
-|----------|-----------------|------------|
-| Codex | `.codex-plugin/plugin.json` | `.mcp.json` |
-| Claude Code | `.claude-plugin/plugin.json` | `.mcp.claude.json` |
-| Cursor | `.cursor-plugin/plugin.json` | `mcp.json` |
+Define what you’re actively building.
 
-Portable entry: `bin/contorium-mcp-launch.cjs`  
-MCP tools: `store_memory`, `search_memory`, `get_memory`, `get_workspace_context` — see [docs/MCP.md](docs/MCP.md).
+Examples:
 
-**Codex**
+* Refactor authentication flow
+* Fix websocket reconnect issue
+* Improve MCP runtime synchronization
 
-```bash
-npm run build:mcp
-codex mcp add contorium -- node ./bin/contorium-mcp-launch.cjs
-```
+⸻
 
-Install as plugin: [Codex plugins](https://developers.openai.com/codex/plugins/build); local marketplace example: [`.agents/plugins/marketplace.example.json`](.agents/plugins/marketplace.example.json).
+2. Work Normally
 
-**Claude Code**
+Contorium continuously tracks:
 
-```bash
-npm run build:mcp
-claude --plugin-dir .
-# MCP only:
-claude mcp add --scope project contorium -- node ./bin/contorium-mcp-launch.cjs
-```
+* active files
+* git activity
+* workspace state
+* recent changes
+* session activity
 
-**Cursor Agent (MCP)**
+No manual memory management required.
 
-Point Cursor MCP to root `mcp.json` (uses `${workspaceFolder}/packages/mcp/dist/server.js`). Requires `npm run build:mcp` so `packages/mcp/dist/server.js` exists.
+⸻
 
-**Note:** MCP complements the VSIX extension. For sidebar UI and automatic `.contora/state.json` updates, install the extension; use MCP when the agent runs in Codex / Claude Code / Cursor Agent without the sidebar.
+3. Continue Across Sessions
+
+Close Cursor.
+
+Reopen tomorrow.
+
+Your AI still understands:
+
+* current focus
+* active workspace state
+* recent work
+* project continuity
+
+⸻
+
+4. Use Across AI Coding Tools
+
+Contorium maintains runtime continuity across:
+
+* Cursor
+* VS Code
+* Claude Code
+* Codex
+* MCP-compatible agents
+
+⸻
+
+MCP Integration
+
+Contorium exposes runtime state through MCP-compatible tools.
+
+Compatible with:
+
+* Claude Code
+* Codex
+* custom MCP runtimes
+* agent-based workflows
+
+Example MCP configuration:
+
+{
+  "mcpServers": {
+    "contorium": {
+      "command": "node",
+      "args": ["path/to/contorium-mcp/dist/index.js"]
+    }
+  }
+}
+
+⸻
+
+Local-first
+
+* no cloud sync
+* no hidden telemetry
+* optional BYOK
+* workspace data stays local
+
+⸻
+
+Architecture
+
+Contorium combines:
+
+* IDE-native runtime tracking
+* workspace state persistence
+* MCP-compatible runtime access
+* local-first storage
+
+to create a continuous runtime layer for AI coding systems.
+
+Additional docs:
+
+* RUNTIME.md
+* MCP.md
+* ARCHITECTURE.md
 
 ⸻
 
 Vision
 
-Contorium is not just a memory plugin.
+AI coding systems need more than memory.
 
-It is an attempt to build persistent runtime continuity for AI-native software development.
+They need runtime continuity.
+
+Contorium is building that layer.
