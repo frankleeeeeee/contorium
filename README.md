@@ -1,4 +1,8 @@
+![Contorium demo](./demo.gif)
+
 Contorium
+
+**Website:** [contorium.dev](https://www.contorium.dev/)
 
 Runtime continuity layer for AI coding agents.
 
@@ -222,3 +226,5 @@ AI coding systems need more than memory.
 They need runtime continuity.
 
 Contorium is building that layer.
+
+**Website:** [contorium.dev](https://www.contorium.dev/)

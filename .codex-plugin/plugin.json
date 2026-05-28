@@ -1,6 +1,6 @@
 {
   "name": "contorium",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Persistent lifecycle workspace memory for AI coding agents: focus, Git, session events, and MCP recall tools.",
   "author": {
     "name": "ContoriumLabs",
