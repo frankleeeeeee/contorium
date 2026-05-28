@@ -1,0 +1,44 @@
+{
+  "name": "contorium",
+  "version": "0.6.1",
+  "description": "Persistent lifecycle workspace memory for AI coding agents: focus, Git, session events, and MCP recall tools.",
+  "author": {
+    "name": "ContoriumLabs",
+    "url": "https://github.com/ContoriumLabs"
+  },
+  "homepage": "https://github.com/ContoriumLabs/contorium#readme",
+  "repository": "https://github.com/ContoriumLabs/contorium",
+  "license": "MIT",
+  "keywords": [
+    "workspace",
+    "memory",
+    "context",
+    "mcp",
+    "codex",
+    "ai-coding"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Contorium",
+    "shortDescription": "Persistent workspace memory for Codex",
+    "longDescription": "Contorium tracks workspace focus, Git activity, and session context locally. Use MCP tools to recall project state across long Codex tasks without re-explaining the repository.",
+    "developerName": "ContoriumLabs",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/ContoriumLabs/contorium",
+    "privacyPolicyURL": "https://github.com/ContoriumLabs/contorium#readme",
+    "termsOfServiceURL": "https://github.com/ContoriumLabs/contorium/blob/main/LICENSE",
+    "defaultPrompt": [
+      "Recall my workspace focus and active files.",
+      "Store a design decision in Contorium memory.",
+      "Summarize Git and session context before we continue."
+    ],
+    "brandColor": "#2563EB",
+    "composerIcon": "./assets/logo.png",
+    "logo": "./assets/logo.png"
+  }
+}

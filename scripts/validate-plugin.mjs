@@ -229,6 +229,7 @@ async function validateManifest(manifestPath, platformLabel, pathFields) {
 async function main() {
   const cursorManifest = path.join(pluginDir, '.cursor-plugin', 'plugin.json');
   const claudeManifest = path.join(pluginDir, '.claude-plugin', 'plugin.json');
+  const codexManifest = path.join(pluginDir, '.codex-plugin', 'plugin.json');
 
   const cursorName = await validateManifest(cursorManifest, 'Cursor', [
     'logo',
@@ -237,15 +238,24 @@ async function main() {
     'commands',
     'mcpServers',
   ]);
-  const claudeName = await validateManifest(claudeManifest, 'Claude Code', ['skills', 'commands', 'mcpServers']);
+  const claudeName = await validateManifest(claudeManifest, 'Claude Code', ['skills', 'mcpServers']);
+  const codexName = await validateManifest(codexManifest, 'Codex', ['skills', 'mcpServers']);
 
   if (!(await pathExists(claudeManifest))) {
     addError('Claude Code manifest missing: .claude-plugin/plugin.json');
-  } else if (!(await pathExists(path.join(pluginDir, '.mcp.json')))) {
-    addWarning('Claude Code expects .mcp.json at repo root when mcpServers is configured.');
+  } else if (!(await pathExists(path.join(pluginDir, '.mcp.claude.json')))) {
+    addWarning('Claude Code: .mcp.claude.json missing (referenced by mcpServers).');
   }
 
-  const componentName = cursorName ?? claudeName ?? 'plugin';
+  if (!(await pathExists(codexManifest))) {
+    addError('Codex manifest missing: .codex-plugin/plugin.json');
+  } else if (!(await pathExists(path.join(pluginDir, '.mcp.json')))) {
+    addWarning('Codex: .mcp.json missing at repo root.');
+  } else if (!(await pathExists(path.join(pluginDir, 'bin', 'contorium-mcp-launch.cjs')))) {
+    addError('Codex/Claude MCP launcher missing: bin/contorium-mcp-launch.cjs');
+  }
+
+  const componentName = cursorName ?? claudeName ?? codexName ?? 'plugin';
   await validateComponents(componentName);
 
   if (!(await pathExists(path.join(pluginDir, 'package.json')))) {
@@ -274,7 +284,7 @@ function summarize() {
     }
     process.exit(1);
   }
-  console.log('Plugin validation passed (Cursor + Claude Code manifests).');
+  console.log('Plugin validation passed (Cursor + Claude Code + Codex manifests).');
 }
 
 await main();

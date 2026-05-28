@@ -2,9 +2,9 @@
   "contorium": {
     "command": "node",
     "args": ["./bin/contorium-mcp-launch.cjs"],
-    "cwd": "${PLUGIN_ROOT}",
+    "cwd": "${CLAUDE_PLUGIN_ROOT}",
     "env": {
-      "CONTORIUM_WORKSPACE": "${CODEX_PROJECT_DIR}"
+      "CONTORIUM_WORKSPACE": "${CLAUDE_PROJECT_DIR}"
     }
   }
 }

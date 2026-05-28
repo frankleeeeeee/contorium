@@ -50,7 +50,7 @@ function syncLockfile(rel, names) {
 
 console.log(`Syncing version ${version} from package.json\n`);
 
-for (const rel of ['.cursor-plugin/plugin.json', '.claude-plugin/plugin.json']) {
+for (const rel of ['.cursor-plugin/plugin.json', '.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) {
   patchJson(rel, (d) => {
     d.version = version;
   });

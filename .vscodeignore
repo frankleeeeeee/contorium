@@ -15,6 +15,9 @@ scripts/**
 # Cursor Marketplace plugin bundle (Git repo submission — not VS Code runtime).
 .cursor-plugin/**
 .claude-plugin/**
+.codex-plugin/**
+.bin/**
+.mcp.claude.json
 assets/**
 commands/**
 skills/**

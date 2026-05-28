@@ -5,6 +5,7 @@ const LEGACY_DATA_DIR = '.context-recall';
 /** Workspace root for MCP (Claude Code / Cursor spawn cwd or explicit env). */
 export function resolveWorkspaceRoot() {
     const fromEnv = process.env.CONTORIUM_WORKSPACE?.trim() ||
+        process.env.CODEX_PROJECT_DIR?.trim() ||
         process.env.CLAUDE_PROJECT_DIR?.trim() ||
         process.env.CLAUDE_PROJECT_ROOT?.trim() ||
         process.env.MCP_WORKSPACE_ROOT?.trim();

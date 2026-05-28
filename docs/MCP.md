@@ -1,4 +1,4 @@
-# Contorium MCP (Claude Code + Cursor)
+# Contorium MCP (Codex + Claude Code + Cursor)
 
 stdio MCP server exposing Contorium memory tools. Works alongside the **VS Code / Cursor extension** (sidebar + scanners); does not replace the extension UI.
 
@@ -24,11 +24,34 @@ npm run compile
 First-time only, you can also run `npm run install:mcp` explicitly.
 
 Entry: `packages/mcp/dist/server.js`  
+Plugin launcher (portable): `bin/contorium-mcp-launch.cjs`  
 CLI bin (after `npm install` in `packages/mcp`): `contorium-mcp`
+
+## OpenAI Codex (plugin)
+
+Official layout: [`.codex-plugin/plugin.json`](https://developers.openai.com/codex/plugins/build) and root [`.mcp.json`](https://developers.openai.com/codex/plugins/build).
+
+After `npm run build:mcp`:
+
+1. Install the plugin from this repository (local marketplace example: [`.agents/plugins/marketplace.example.json`](../.agents/plugins/marketplace.example.json)).
+2. Enable the bundled MCP server `contorium` in Codex settings.
+
+MCP-only (project):
+
+```bash
+codex mcp add contorium -- node ./bin/contorium-mcp-launch.cjs
+```
+
+Uses `${PLUGIN_ROOT}` + `./bin/contorium-mcp-launch.cjs` in `.mcp.json` (see [Codex plugin MCP](https://developers.openai.com/codex/plugins/build)).
+
+Environment variables:
+
+- `CONTORIUM_WORKSPACE` — workspace root (default: `CODEX_PROJECT_DIR` or walk up to `.contora/state.json`)
+- `CODEX_PROJECT_DIR` — set by Codex when spawning MCP
 
 ## Claude Code (plugin)
 
-Official layout uses [`.claude-plugin/plugin.json`](https://code.claude.com/docs/en/plugins) and root [`.mcp.json`](https://code.claude.com/docs/en/mcp). This repo includes both for Claude Code plugin installs.
+Official layout uses [`.claude-plugin/plugin.json`](https://code.claude.com/docs/en/plugins) and [`.mcp.claude.json`](https://code.claude.com/docs/en/mcp). This repo includes both for Claude Code plugin installs.
 
 After `npm run build:mcp`, load locally:
 
@@ -39,16 +62,18 @@ claude --plugin-dir .
 Or add MCP only (project scope):
 
 ```bash
-claude mcp add --scope project contorium -- node ./packages/mcp/dist/server.js
+claude mcp add --scope project contorium -- node ./bin/contorium-mcp-launch.cjs
 ```
 
-Plugin MCP config uses `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_PROJECT_DIR}` (see `.mcp.json`).
+Plugin MCP config uses `${CLAUDE_PLUGIN_ROOT}` as `cwd` and `./bin/contorium-mcp-launch.cjs` (see `.mcp.claude.json`).
 
 Environment variables:
 
 - `CONTORIUM_WORKSPACE` — workspace root (default: cwd, or walk up to find `.contora/state.json`)
+- `CODEX_PROJECT_DIR` — set by Codex when spawning MCP
 - `CLAUDE_PROJECT_DIR` — set by Claude Code when spawning MCP (preferred for plugin installs)
 - `CLAUDE_PROJECT_ROOT` — alias accepted by some integrations
+- `PLUGIN_ROOT` — plugin install directory (Codex; also sets `CLAUDE_PLUGIN_ROOT` for compatibility)
 
 ## Cursor IDE
 

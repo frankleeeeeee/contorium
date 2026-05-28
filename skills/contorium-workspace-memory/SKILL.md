@@ -28,7 +28,7 @@ description: Use Contorium workspace memory layers (focus, session events, Git, 
 4. When AI intent is stale (low confidence), rely on heuristic operational intent from recent edits.
 5. Respect ignore rules (`.contoraignore`, `contora.extraIgnoreSubstrings`) when reasoning about ranked files.
 
-## MCP tools (Claude Code / Cursor Agent)
+## MCP tools (Codex / Claude Code / Cursor Agent)
 
 When the Contorium MCP server is connected (`npm run build:mcp`, see `docs/MCP.md`):
 
