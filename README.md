@@ -88,106 +88,160 @@ No context reset. No repeated explanations.
 
 ⸻
 
-Quick Install
+Install
 
-VS Code / Cursor
+**IDE extension (VS Code / Cursor)**
 
-Install from VSIX
+1. Download the latest `.vsix` from [GitHub Releases](https://github.com/ContoriumLabs/contorium/releases) (or build with `npm run vsix`).
+2. Open **Extensions** → `…` → **Install from VSIX…** → select the file.
+3. Reload the window. Open the **Contorium** sidebar from the activity bar.
 
-1. Download the latest .vsix
-2. Open Extensions
-3. Click:
-    * ...
-    * Install from VSIX
-4. Select the downloaded file
+**From source**
 
-⸻
-
-From Source
-
+```bash
 git clone https://github.com/ContoriumLabs/contorium.git
 cd contorium
 npm install
 npm run compile
+```
+
+Press **F5** in VS Code/Cursor to run the Extension Development Host, or package with `npm run vsix`.
+
+**MCP server (for Claude Code, Cursor Agent, Gemini CLI, Codex)**
+
+Build once from the repo root:
+
+```bash
+npm run build:mcp
+```
+
+Entry: `packages/mcp/dist/server.js` · portable launcher: `bin/contorium-mcp-launch.cjs`
+
+Full tool list and env vars: [docs/MCP.md](docs/MCP.md).
 
 ⸻
 
-Quick Usage
+MCP config (Claude Code)
 
-1. Set Current Focus
+After `npm run build:mcp`:
 
-Define what you’re actively building.
+**Plugin (recommended)** — uses [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) and [`.mcp.claude.json`](.mcp.claude.json):
 
-Examples:
+```bash
+claude --plugin-dir /path/to/contorium
+```
 
-* Refactor authentication flow
-* Fix websocket reconnect issue
-* Improve MCP runtime synchronization
+**MCP only (project scope)**
 
-⸻
+```bash
+cd /path/to/your/workspace
+claude mcp add --scope project contorium -- node /path/to/contorium/bin/contorium-mcp-launch.cjs
+```
 
-2. Work Normally
+Bundled plugin MCP (`.mcp.claude.json`):
 
-Contorium continuously tracks:
+```json
+{
+  "contorium": {
+    "command": "node",
+    "args": ["./bin/contorium-mcp-launch.cjs"],
+    "cwd": "${CLAUDE_PLUGIN_ROOT}",
+    "env": {
+      "CONTORIUM_WORKSPACE": "${CLAUDE_PROJECT_DIR}"
+    }
+  }
+}
+```
 
-* active files
-* git activity
-* workspace state
-* recent changes
-* session activity
-
-No manual memory management required.
-
-⸻
-
-3. Continue Across Sessions
-
-Close Cursor.
-
-Reopen tomorrow.
-
-Your AI still understands:
-
-* current focus
-* active workspace state
-* recent work
-* project continuity
+Keep the **Contorium VS Code extension** (or another editor with scanners) running in the workspace so `.contora/state.json` stays updated; MCP reads that state.
 
 ⸻
 
-4. Use Across AI Coding Tools
+MCP config (Cursor / Gemini CLI)
 
-Contorium maintains runtime continuity across:
+**Cursor** — root [`mcp.json`](mcp.json) (also referenced from [`.cursor-plugin/plugin.json`](.cursor-plugin/plugin.json)):
 
-* Cursor
-* VS Code
-* Claude Code
-* Codex
-* MCP-compatible agents
-
-⸻
-
-MCP Integration
-
-Contorium exposes runtime state through MCP-compatible tools.
-
-Compatible with:
-
-* Claude Code
-* Codex
-* custom MCP runtimes
-* agent-based workflows
-
-Example MCP configuration:
-
+```json
 {
   "mcpServers": {
     "contorium": {
       "command": "node",
-      "args": ["path/to/contorium-mcp/dist/index.js"]
+      "args": ["${workspaceFolder}/packages/mcp/dist/server.js"],
+      "env": {
+        "CONTORIUM_WORKSPACE": "${workspaceFolder}"
+      }
     }
   }
 }
+```
+
+In Cursor: **Settings → MCP** → add/import the server above (or enable the plugin’s bundled `contorium` server after installing from the marketplace). Run `npm run build:mcp` in the cloned repo first.
+
+**Gemini CLI** — add to project `.gemini/settings.json` or user `~/.gemini/settings.json` (use **absolute paths** to your clone):
+
+```json
+{
+  "mcpServers": {
+    "contorium": {
+      "command": "node",
+      "args": ["/absolute/path/to/contorium/packages/mcp/dist/server.js"],
+      "env": {
+        "CONTORIUM_WORKSPACE": "/absolute/path/to/your/workspace"
+      }
+    }
+  }
+}
+```
+
+Alternatively set `args` to `["/absolute/path/to/contorium/bin/contorium-mcp-launch.cjs"]` and `cwd` to the repo root. Restart the Gemini CLI session after editing settings.
+
+**Codex** (optional): `codex mcp add contorium -- node ./bin/contorium-mcp-launch.cjs` — see [docs/MCP.md](docs/MCP.md).
+
+⸻
+
+Example usage
+
+**1. Set Current focus** — In the Contorium sidebar, describe what you are building (e.g. *Fix websocket reconnect issue*).
+
+**2. Work normally** — The extension tracks open files, saves, Git, and recent activity into `.contora/` (local only).
+
+**3. Restore context for AI** — Command Palette → **Contorium: Copy AI-ready context (clipboard)** → paste into Cursor chat, Claude, or Gemini. Export includes TASK, workspace focus, active files, and recent work.
+
+**4. Agent via MCP** — In Claude Code / Cursor Agent / Gemini CLI, ask the agent to call `get_workspace_context` or `store_memory` (e.g. *“Read Contorium workspace context and continue the auth refactor”*).
+
+**5. Next day** — Reopen the IDE; focus and workspace state persist. Use **Contorium: Start fresh AI context session** when you switch to an unrelated task.
+
+Optional: **Contorium: Configure API key…** for BYOK summaries/intent (OpenAI, Anthropic, Gemini, DeepSeek).
+
+⸻
+
+Uninstall
+
+**VS Code / Cursor extension**
+
+1. Extensions → find **Contorium** → **Uninstall**.
+2. Reload the window.
+
+**MCP registrations**
+
+| Host | Remove |
+|------|--------|
+| Claude Code | `claude mcp remove contorium` (or disable/remove the plugin install) |
+| Cursor | Settings → MCP → delete the `contorium` server |
+| Gemini CLI | Remove `contorium` from `.gemini/settings.json` or `~/.gemini/settings.json` |
+| Codex | `codex mcp remove contorium` |
+
+**Local data (optional)**
+
+Uninstalling does **not** delete workspace data. To remove runtime files:
+
+```bash
+rm -rf .contora
+# legacy layout (if present):
+rm -rf .context-recall
+```
+
+Also remove BYOK keys if stored: Command Palette → **Contorium: Configure API key…** → clear keys, or delete the extension’s Secret Storage entries when uninstalling from the IDE.
 
 ⸻
 
